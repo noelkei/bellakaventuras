@@ -1,0 +1,64 @@
+=== /etc/systemd/system/caddy.service.d/bk.conf
+# Que Caddy se levante solo si se cae (antes: Restart=no). Sin WatchdogSec: Caddy no avisa a systemd (R8).
+[Unit]
+StartLimitIntervalSec=0
+[Service]
+Restart=always
+RestartSec=2s
+OOMScoreAdjust=-500
+=== /etc/systemd/system/bk-vigilante.service
+[Unit]
+Description=Bellakaventuras: vigilante local (cura y avisa)
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/bk-vigilante
+=== /etc/systemd/system/bk-vigilante.timer
+[Unit]
+Description=Bellakaventuras: vigilante cada minuto
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=1min
+AccuracySec=5s
+[Install]
+WantedBy=timers.target
+=== /etc/systemd/system/bk-guardian.service
+[Unit]
+Description=Bellakaventuras: guardián de abusos
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/bk-guardian
+=== /etc/systemd/system/bk-guardian.timer
+[Unit]
+Description=Bellakaventuras: guardián cada minuto
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=1min
+AccuracySec=5s
+[Install]
+WantedBy=timers.target
+=== /etc/systemd/system/bk-nft.service
+[Unit]
+Description=Bellakaventuras: tabla nftables propia (bloqueos y tope de conexiones)
+After=network-pre.target ufw.service
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStartPre=-/usr/sbin/nft delete table inet bk
+ExecStart=/usr/sbin/nft -f /etc/bk/bk.nft
+ExecStop=/usr/sbin/nft delete table inet bk
+[Install]
+WantedBy=multi-user.target
+=== /etc/sysctl.d/90-bk.conf
+# Si el kernel se cuelga, reiniciar solo a los 10 s.
+kernel.panic = 10
+kernel.panic_on_oops = 1
+# Búferes UDP para HTTP/3 (aviso de quic-go; R5/R7).
+net.core.rmem_max = 7500000
+net.core.wmem_max = 7500000
+# Lo urgente (HTML, JS) sale antes cuando hay mucho encolado; y si una ruta tiene un agujero negro de MTU,
+# TCP baja el tamaño de paquete en vez de colgarse (R7 #8 y #9).
+net.ipv4.tcp_notsent_lowat = 16384
+net.ipv4.tcp_mtu_probing = 1
+=== /etc/systemd/journald.conf.d/bk.conf
+[Journal]
+SystemMaxUse=300M

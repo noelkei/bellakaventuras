@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Gancho de publicar.sh (va el último): fecha de cada archivo sacada de su huella SHA-256.
+# Caddy calcula el ETag con fecha + tamaño: así un archivo que no cambia conserva su ETag entre publicaciones
+# y quien vuelve tras un arreglo no descarga otra vez los 30 MB (R7 §2.4).
+set -euo pipefail
+S="$1"
+find "$S" -type f -print0 | while IFS= read -r -d '' f; do
+  s=$(( 16#$(shasum -a 256 "$f" | cut -c1-7) ))
+  touch -t "$(date -r $(( 946684800 + s )) +%Y%m%d%H%M.%S)" "$f"
+done
+echo "   fechas fijadas por contenido"

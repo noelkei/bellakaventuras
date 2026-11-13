@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#24212B" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Bellakaventuras</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+  <!-- V10.1 P01: manifiesto de app (pantalla de inicio sin barras) e icono de iPhone -->
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Bellakaventuras" />
+  <!-- V10.6 (B6 §6.3): vista previa al compartir el enlace (WhatsApp, Instagram, TikTok…); la imagen va con URL absoluta -->
+  <meta name="description" content="Patina por el parque de ANMI, encuentra las 20 patatas y supera el reto de SECRETNOVIO." />
+  <link rel="canonical" href="https://bellakaventuras.com/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="es_ES" />
+  <meta property="og:site_name" content="Bellakaventuras" />
+  <meta property="og:title" content="Bellakaventuras · El videojuego de ANMI" />
+  <meta property="og:description" content="Patina por el parque de ANMI, encuentra las 20 patatas y supera el reto de SECRETNOVIO." />
+  <meta property="og:url" content="https://bellakaventuras.com/" />
+  <meta property="og:image" content="https://bellakaventuras.com/og-bellakaventuras.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Bellakaventuras, el videojuego de ANMI: el parque de skate" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="stylesheet" href="./src/style.css" />
+  <link rel="stylesheet" href="./src/portada/portada.css" />
+</head>
+<body>
+  <canvas id="game" aria-label="Parque de Bellakaventuras"></canvas>
+  <div id="ui">
+    <!-- Capa 1 (abajo): controles táctiles. La zona de cámara solo recibe toques en espacio libre: todo el HUD va encima. -->
+    <!-- V10 IT3: viñeta del modo actividad (bordes oscurecidos mientras dura una actividad como el grind de NVDA) -->
+    <div id="act-vignette" aria-hidden="true"></div>
+    <section id="touch" hidden aria-label="Controles táctiles">
+      <div id="cam-zone"></div>
+      <div id="stick-zone"></div>
+      <div id="stick" hidden><i></i></div>
+      <button id="btn-jump" aria-label="Saltar" data-key="Espacio" data-pad="A">SALTO</button>
+      <button id="btn-crouch" aria-label="Agacharse" aria-pressed="false" data-key="C" data-pad="B">AGACHARSE</button>
+      <button id="btn-board" aria-label="Subir a la tabla" data-key="Q" data-pad="LB">SUBIR</button>
+      <button id="btn-cam" class="round" aria-label="Recentrar cámara" data-key="R" data-pad="R3">◎</button>
+      <!-- V10: equilibrio del grind de RG1 (NOSVAMOSDEAQUÍ): visibles solo durante el grind en táctil (body.grind.touch, por CSS: con
+           el atributo hidden, `#ui [hidden]` con !important no los dejaba aparecer nunca) -->
+      <button id="btn-lean-l" class="lean" aria-label="Equilibrar a la izquierda">◀</button>
+      <button id="btn-lean-r" class="lean" aria-label="Equilibrar a la derecha">▶</button>
+      <!-- V10.1 P09 (usuario: «un boton que sea como skills, clicas y saldrán un boton de bailar o de grafitear, y dentro 4 bailes y 4 grafitis»):
+           SKILLS (B · RB · este botón) → BAILAR / GRAFITEAR → 4 opciones (teclado 1/2 y luego 1–4; 1–4 bailan y 5–8 grafitean directamente) -->
+      <button id="btn-dance" aria-label="Skills: bailar o grafitear (B)" aria-expanded="false" hidden data-key="B" data-pad="RB">★<small>SKILLS</small></button>
+      <div id="dance-ring" hidden>
+        <button class="skill-root" data-l="dance" aria-label="Bailar">♪<small>BAILAR</small></button><button class="skill-root" data-l="graffiti" aria-label="Grafitear">✦<small>GRAFITEAR</small></button>
+        <button class="dance-opt" data-n="1" aria-label="Baile 1: Breakdance">1<small>Break</small></button><button class="dance-opt" data-n="2" aria-label="Baile 2: Hip Hop">2<small>Hip Hop</small></button>
+        <button class="dance-opt" data-n="3" aria-label="Baile 3: Funny">3<small>Funny</small></button><button class="dance-opt" data-n="4" aria-label="Baile 4: Step">4<small>Step</small></button>
+        <button class="graf-opt" data-g="1" aria-label="Grafiti 1: Bellakroak"><img src="./assets/tex/thumb_skill_01.webp" alt="" /></button><button class="graf-opt" data-g="2" aria-label="Grafiti 2: monograma Ai"><img src="./assets/tex/thumb_skill_02.webp" alt="" /></button>
+        <button class="graf-opt" data-g="3" aria-label="Grafiti 3: mano con gato"><img src="./assets/tex/thumb_skill_03.webp" alt="" /></button><button class="graf-opt" data-g="4" aria-label="Grafiti 4: BELLAKACIONES"><img src="./assets/tex/thumb_skill_04.webp" alt="" /></button>
+      </div>
+    </section>
+
+    <!-- Capa 2: HUD (contador, zona, pausa, acción contextual, avisos) -->
+    <section id="hud" hidden>
+      <div id="counter" aria-live="polite"><span class="fry-icon" aria-hidden="true"></span><b id="count">0</b><small>/20</small></div>
+      <div id="zone"><b id="zone-name"></b> <span id="local"></span><br><small id="zone-song"></small></div>
+      <!-- V10.6.1: cronómetro de speedrun (crono.ts) -->
+      <div id="crono" hidden aria-hidden="true"></div>
+      <div id="objective" hidden></div>
+      <div id="save-badge" hidden role="status"></div>
+      <button id="btn-sound-fix" class="small" hidden>🔈 Activar sonido</button>
+      <button id="btn-pause" class="round" aria-label="Pausa (Escape)" data-key="Esc" data-pad="Start">II</button>
+      <div id="toast" hidden role="status" aria-live="polite"></div>
+      <div id="hint" hidden></div>
+      <div id="task" hidden aria-live="polite"></div>
+      <div id="mode-chip" hidden></div>
+      <div id="reward-arrow" hidden aria-hidden="true">➤</div>
+      <!-- V10 IT3: panel del grind de Fennec (NVDA): circuito que queda, barra de equilibrio y aviso -->
+      <div id="grind-hud" hidden aria-live="polite">
+        <div class="gh-row"><span class="gh-title">GRIND DE BELLAKAT</span><span id="gh-left"></span></div>
+        <div class="gh-prog" role="progressbar" aria-label="Circuito"><i id="gh-prog-fill"></i></div>
+        <div class="gh-bal" role="meter" aria-label="Equilibrio"><span class="gh-l">◀</span><i id="gh-needle"></i><span class="gh-r">▶</span></div>
+        <div id="gh-msg"></div>
+      </div>
+      <div id="prompt" hidden><p id="prompt-note" hidden></p><button id="btn-action" class="big pink">ACCIÓN</button></div>
+    </section>
+
+    <!-- V10.6.2: rótulo del tiempo final, como ventana (fuera del HUD: las ventanas lo desactivan) con «Continuar» (crono.ts + bootstrap.ts) -->
+    <section id="crono-fin" hidden aria-label="Tu tiempo"><small>¡JUEGO COMPLETADO!</small><b></b><em></em><ol></ol><i></i>
+      <button id="btn-crono-ok" class="big pink">CONTINUAR</button></section>
+
+    <!-- V10.1 P04: círculo del reto final (hit circle + approach circle); fuera del HUD (las franjas de cine lo ocultan) -->
+    <section id="hit-circle" hidden aria-live="assertive">
+      <div class="hc-ring" aria-hidden="true"></div>
+      <button class="hc-core" aria-label="Pulsa ahora"><b class="hc-name">BACKFLIP</b><small class="hc-key">Espacio</small></button>
+      <div class="hc-bar" aria-hidden="true"><i></i></div>
+      <div class="hc-msg"></div>
+    </section>
+
+    <!-- Diálogo de charla -->
+    <section id="dialog" hidden aria-live="polite">
+      <div class="bubble"><b id="dialog-name"></b><p id="dialog-text"></p><button id="dialog-ok" class="small" data-key="E" data-pad="A">Vale</button></div>
+    </section>
+
+    <!-- Grafiti -->
+    <section id="graffiti" class="overlay" hidden aria-label="Pintar la torre">
+      <div class="mg-title">Pinta la torre <span id="graffiti-pct">0%</span> <span id="graffiti-err" title="Cuánto te has salido"><i></i></span></div>
+      <div id="graffiti-msg" role="status" aria-live="polite"></div>
+      <div id="graffiti-wrap"><canvas id="graffiti-canvas" aria-label="Plantilla del grafiti de la torre: pinta con el dedo o el ratón"></canvas></div>
+      <div class="mg-hint">Pasa el dedo por la plantilla: yin-yang y logo ANMI. Lo pintado se guarda.</div>
+      <button id="graffiti-exit" class="small ghost" data-key="X" data-pad="B">Salir</button>
+    </section>
+
+    <!-- Baile -->
+    <section id="dance" class="overlay clear" hidden aria-label="Baile">
+      <div class="mg-title">Stage <b id="dance-round">1</b>/3</div>
+      <div id="dance-timer" role="timer" aria-live="off"><i></i><span id="dance-time">15.0</span></div>
+      <div id="dance-seq" aria-live="polite"></div>
+      <div id="dance-msg" aria-live="polite"></div>
+      <button id="dance-exit" class="small ghost" data-key="X" data-pad="B">Salir</button>
+      <div id="dance-pad">
+        <button data-k="up" aria-label="Arriba" data-key="↑" data-pad="↑">▲</button>
+        <button data-k="left" aria-label="Izquierda" data-key="←" data-pad="←">◀</button>
+        <button data-k="right" aria-label="Derecha" data-key="→" data-pad="→">▶</button>
+        <button data-k="down" aria-label="Abajo" data-key="↓" data-pad="↓">▼</button>
+      </div>
+    </section>
+
+    <!-- Pausa -->
+    <section id="pause" class="screen dim" hidden aria-labelledby="pause-title">
+      <h2 id="pause-title">Pausa</h2>
+      <div class="row wrap">
+        <button id="btn-resume" class="big">Seguir</button>
+      </div>
+      <label>Volumen <input id="vol" type="range" min="0" max="1" step="0.05" /></label>
+      <div class="row wrap">
+        <button id="btn-mute" class="small">Silenciar</button>
+        <button id="btn-pista" class="small" hidden>Dame una pista</button>
+        <button id="btn-tuto-skip2" class="small" hidden>Saltar tutorial</button>
+        <button id="btn-help" class="small">Controles</button>
+        <button id="btn-settings" class="small">Ajustes</button>
+        <!-- V10.6 (B6; el usuario: «en el menú de pausa»): créditos -->
+        <button id="btn-creditos" class="small" type="button" aria-haspopup="dialog" aria-controls="creditos">Créditos</button>
+        <button id="btn-preview-again" class="small" hidden>▶ Ver la escena final</button>
+        <button id="btn-exit-act" class="small" hidden>Salir de la actividad</button>
+        <button id="btn-plaza" class="small">Volver a la plaza</button>
+        <button id="btn-fs" class="small" hidden>⛶ Pantalla completa</button>
+        <!-- V10.5 (AM-01, AM-16; E5-18): «Pantalla» sale de la esquina de II (el clic de compatibilidad del toque que abría la pausa caía en él) -->
+        <button id="btn-orient" class="small" aria-label="Orientación de pantalla">Pantalla: Automática</button>
+      </div>
+      <p class="tiny" id="save-note">Progreso guardado en este navegador.</p>
+      <button id="btn-save-retry" class="small ghost" hidden>Reintentar guardar</button>
+      <button id="btn-restart" class="link">Reiniciar partida…</button>
+    </section>
+
+    <!-- Ajustes -->
+    <section id="settings" class="screen dim" hidden aria-labelledby="settings-title">
+      <div class="ajustes-cab"><h2 id="settings-title">Ajustes</h2></div>
+      <div class="opts">
+        <p class="tiny" id="opt-drive-note">Conducción: arriba avanza/empuja hacia donde mira ANMI, abajo frena y luego retrocede, los lados solo giran. La cámara solo mira.</p>
+        <label><input type="checkbox" id="opt-invert" /> Invertir cámara vertical</label>
+        <label><input type="checkbox" id="opt-reduced" /> Movimiento reducido (sin sacudidas ni destellos)</label>
+        <label id="opt-ayuda-row"><input type="checkbox" id="opt-ayuda" /> <span id="opt-ayuda-label">Modo ayuda</span></label>
+        <p class="tiny" id="opt-ayuda-note"></p>
+        <label id="opt-mouse-row"><input type="checkbox" id="opt-mouse" /> Ratón: mover la cámara sin hacer clic (captura el puntero; Esc lo suelta)</label>
+        <label>Sensibilidad de cámara <input id="opt-sens" type="range" min="0.5" max="1.6" step="0.1" /></label>
+        <!-- V10.2 Q10 (usuario: «tiene que ser un botón… entras en lo que se ve el HUD y tienes la barrita ahí arriba, y un botón de guardar y otro de salir») -->
+        <div id="opt-btn-row"><button id="btn-size-open" class="small">Tamaño de los botones… <b id="opt-btn-now">100 %</b></button></div>
+        <!-- V10.4 R20 (usuario: «poder cambiar el lado de los botones, para zurdos y diestros») -->
+        <label id="opt-zurdo-row"><input type="checkbox" id="opt-zurdo" /> Zurdo: botones a la izquierda y joystick a la derecha (pantalla táctil)</label>
+        <!-- V10.5 (E5-33): Modo eficiente, solo en pantalla táctil (móvil y tablet), apagado por defecto -->
+        <label id="opt-eficiente-row"><input type="checkbox" id="opt-eficiente" /> <span id="opt-eficiente-label">Modo eficiente</span></label>
+      </div>
+      <button id="btn-settings-close" class="big">Volver</button>
+    </section>
+
+    <!-- V10.2 Q10: vista de «Tamaño de los botones»: el HUD real con la barra arriba; solo Guardar guarda (Salir, Esc y B deshacen) -->
+    <!-- V10.6 (B6): créditos (textos del usuario, sin contacto) -->
+    <section id="creditos" class="screen dim" hidden aria-labelledby="creditos-title">
+      <h2 id="creditos-title">Créditos</h2>
+      <dl class="creditos">
+        <div><dt>Diseño y desarrollo</dt><dd>Noel Pedrosa Alba</dd></div>
+        <div><dt>Proyecto y música</dt><dd>ANMI</dd></div>
+        <div><dt>Creativo</dt><dd>Joan Because</dd></div>
+        <div class="creditos-colab"><dt>Colaboradores</dt><dd><span>La Mano de Oro</span> · <span>Adrián Rodríguez</span></dd></div>
+      </dl>
+      <a id="lnk-privacidad" class="creditos-priv" href="https://bellakaventuras.com/privacidad" target="_blank" rel="noopener">Privacidad</a>
+      <button id="btn-creditos-close" class="big">Volver</button>
+    </section>
+    <section id="btn-size" hidden aria-labelledby="btn-size-title">
+      <div class="bs-bar">
+        <b id="btn-size-title">Tamaño de los botones</b>
+        <div class="bs-row"><button id="btn-size-minus" class="small" aria-label="Más pequeños">−</button><input id="opt-btn" type="range" min="0.5" max="2" step="0.1" aria-label="Tamaño de los botones" aria-describedby="opt-btn-warn" /><button id="btn-size-plus" class="small" aria-label="Más grandes">+</button><b id="opt-btn-val">100 %</b></div>
+        <p id="opt-btn-warn" class="tiny" role="status" hidden>A este tamaño hay botones que se tocan</p>
+        <div class="bs-row"><button id="btn-size-save" class="small">Guardar</button><button id="btn-size-exit" class="small ghost">Salir</button></div>
+      </div>
+    </section>
+
+    <!-- Ayuda de controles -->
+    <section id="help" class="screen dim" hidden aria-labelledby="help-title">
+      <h2 id="help-title">Controles</h2>
+      <div id="help-body" class="help"></div>
+      <button id="btn-help-close" class="big">Volver</button>
+    </section>
+
+    <!-- Confirmación de reinicio -->
+    <section id="confirm" class="screen dim" hidden aria-labelledby="confirm-title">
+      <h2 id="confirm-title">¿Borrar el progreso?</h2>
+      <p class="tiny">Se perderán las patatas, las actividades, los grafitis que has pintado y la escena final desbloqueada. Empezarás de cero en NO ME GUILLO.</p>
+      <div class="row"><button id="btn-confirm-no" class="big">Cancelar</button><button id="btn-confirm-yes" class="small ghost">Borrar y empezar</button></div>
+    </section>
+
+    <!-- V10.1 P01: iPhone no deja poner una web a pantalla completa; sí abrirla desde su icono en la pantalla de inicio -->
+    <!-- V10.6 (petición del usuario): recomendación de cascos al pulsar JUGAR / CONTINUAR -->
+    <section id="cascos" class="screen" hidden aria-labelledby="cascos-title">
+      <img class="cascos-img" src="./assets/cascos/anmi-cascos.webp" alt="" width="663" height="465" draggable="false" />
+      <h2 id="cascos-title">Recomendamos usar cascos</h2>
+      <p>Para disfrutar al máximo de la música y la experiencia.</p>
+      <button id="btn-cascos" class="big">Continuar</button>
+    </section>
+    <section id="ios-app" class="screen dim" hidden aria-labelledby="ios-app-title">
+      <h2 id="ios-app-title">¿Jugar a pantalla completa?</h2>
+      <p class="tiny">En iPhone se juega sin barras abriendo el juego desde su icono: toca <b>Compartir</b> (□↑) y luego <b>«Añadir a pantalla de inicio»</b>, y abre Bellakaventuras desde ese icono.</p>
+      <p class="tiny">Ojo: el juego de la pantalla de inicio guarda su propia partida (la de Safari no pasa a él).</p>
+      <div class="row wrap"><button id="btn-ios-no" class="small ghost">Ahora no</button><button id="btn-ios-ok" class="big">Entendido</button></div>
+    </section>
+
+    <!-- V10.1 P12: volver a la plaza de salida sin perder nada -->
+    <section id="confirm-plaza" class="screen dim" hidden aria-labelledby="confirm-plaza-title">
+      <h2 id="confirm-plaza-title">¿Volver a la plaza?</h2>
+      <p class="tiny">Vuelves a la plaza de salida, de pie y sin la tabla bajo los pies. No pierdes nada: patatas, actividades y premios siguen contigo.</p>
+      <div class="row"><button id="btn-plaza-no" class="small ghost">Cancelar</button><button id="btn-plaza-yes" class="big">Volver a la plaza</button></div>
+    </section>
+
+    <!-- R13: pérdida del contexto gráfico (móvil al volver de otra app, reinicio de la GPU): aviso y recarga desde la partida guardada -->
+    <section id="glost" class="screen dim" hidden aria-labelledby="glost-title">
+      <h2 id="glost-title">Se ha perdido la imagen</h2>
+      <p class="tiny">Tu partida está guardada. Pulsa continuar para seguir donde lo dejaste.</p>
+      <div class="row"><button id="btn-glost" class="big">Continuar</button></div>
+    </section>
+
+    <!-- Preview final (limpio y visual), repetible -->
+    <!-- V10.1 escena final: saltar (Esc, B del mando o este botón) y fundido a negro -->
+    <button id="btn-cine-skip" class="small" hidden data-key="Esc" data-pad="B">SALTAR ▸</button>
+    <!-- V10.4 (W-D23): saltar el tutorial de la plaza (toque/ratón, tecla T; con mando: Start → Saltar tutorial) -->
+    <button id="btn-tuto-skip" class="small" hidden data-key="T">SALTAR TUTORIAL ▸</button>
+    <div id="cine-fade" aria-hidden="true"></div>
+    <section id="final" class="screen dim" hidden aria-labelledby="final-title">
+      <div id="final-title" class="logo small">SECRET<span>NOVIO</span></div>
+      <div id="visual-slot"><canvas id="visual-canvas" aria-hidden="true"></canvas><div id="visual-label"></div></div>
+      <p id="final-note"></p>
+      <p id="final-status" class="tiny" aria-live="polite"></p>
+      <div class="row wrap">
+        <button id="btn-play-preview" class="big pink">▶ ESCUCHAR</button>
+        <a id="btn-cta" class="big" target="_blank" rel="noopener" hidden aria-label="Abrir el enlace del lanzamiento"></a>
+      </div>
+      <div class="row wrap"><button id="btn-share" class="small" hidden>Compartir</button><button id="btn-close-final" class="small ghost">Volver al parque</button></div>
+    </section>
+
+    <!-- V10.5 ronda PORTADA (prototipos/pantalla-inicio-cozy): escena viva detrás del inicio (sin toques). Se libera entera al pulsar JUGAR. -->
+    <div id="portada-escena" aria-hidden="true">
+      <canvas id="portada-lienzo"></canvas>
+      <div class="pt-sin-webgl" hidden><img class="pt-sin-fondo" alt=""><img class="pt-sin-anmi" alt=""></div>
+      <svg class="pt-simbolos" width="0" height="0">
+        <symbol id="pt-nota-corchea" viewBox="0 0 44 60"><path d="M24.5 9.5 L24.5 44 A10.5 8 -18 1 1 20.5 39 L20.5 6 C23 15 39 17 37.5 34 C35.5 26 31 22.5 24.5 21.5 Z"/></symbol>
+        <symbol id="pt-nota-doble" viewBox="0 0 60 60"><path d="M20 15 L52 6 L52 41 A10 7.6 -18 1 1 48 36.5 L48 17.5 L24 24.5 L24 47 A10 7.6 -18 1 1 20 42.5 Z"/></symbol>
+        <symbol id="pt-nota-negra" viewBox="0 0 40 60"><path d="M24 6 L24 44 A10.5 8 -18 1 1 20 39.5 L20 6 Z"/></symbol>
+        <symbol id="pt-chispa" viewBox="0 0 40 40"><path d="M20 2 C21.5 14 26 18.5 38 20 C26 21.5 21.5 26 20 38 C18.5 26 14 21.5 2 20 C14 18.5 18.5 14 20 2 Z"/></symbol>
+      </svg>
+      <div class="pt-radio-fx"><svg class="pt-radio-rayas" viewBox="0 0 400 200" preserveAspectRatio="none"><g class="rayas-izq"><path d="M40 62 L12 46"/><path d="M34 100 L4 100"/><path d="M40 138 L12 154"/></g><g class="rayas-der"><path d="M360 62 L388 46"/><path d="M366 100 L396 100"/><path d="M360 138 L388 154"/></g></svg></div>
+      <div class="pt-notas"></div>
+    </div>
+
+    <!-- Capa superior: pantalla de inicio. El orden de los botones es el del foco con la cruceta del mando (bootstrap.ts, onDir).
+         #btn-start: su textContent es SIEMPRE exactamente «JUGAR» o «CONTINUAR» (span .pt-vh; sin espacios entre hijos): lo comparan las pruebas. -->
+    <section id="start" data-orient="h" aria-label="Pantalla de inicio">
+      <div class="pt-ui">
+        <header class="pt-marca">
+          <h1 class="pt-titulo pt-letrero"><img class="pt-titulo-img" alt="Bellakaventuras" draggable="false"><span class="pt-chispas" aria-hidden="true"><svg style="--x:6%;--y:18%;--s:1;--d:0s"><use href="#pt-chispa"/></svg><svg style="--x:93%;--y:30%;--s:.8;--d:.08s"><use href="#pt-chispa"/></svg><svg style="--x:62%;--y:2%;--s:.6;--d:.16s"><use href="#pt-chispa"/></svg><svg style="--x:30%;--y:88%;--s:.55;--d:.22s"><use href="#pt-chispa"/></svg></span></h1>
+          <p class="pt-subtitulo pt-letrero"><img class="pt-subtitulo-img" alt="El videojuego de ANMI" draggable="false"><span class="pt-chispas" aria-hidden="true"><svg style="--x:3%;--y:30%;--s:.7;--d:.04s"><use href="#pt-chispa"/></svg><svg style="--x:97%;--y:62%;--s:.7;--d:.12s"><use href="#pt-chispa"/></svg></span></p>
+        </header>
+        <div class="pt-anmi-hueco" aria-hidden="true"></div>
+        <div class="pt-acciones">
+          <div class="pt-jugar-marco">
+            <svg class="pt-destellos" viewBox="0 0 400 140" aria-hidden="true" preserveAspectRatio="none"><g class="destellos-izq"><path d="M30 34 L6 22"/><path d="M26 70 L2 70"/><path d="M30 106 L6 118"/></g><g class="destellos-der"><path d="M370 34 L394 22"/><path d="M374 70 L398 70"/><path d="M370 106 L394 118"/></g></svg>
+            <button id="btn-start" class="pt-btn-jugar" type="button" disabled aria-label="Jugar"><span class="pt-jugar-cara"><span class="pt-jugar-brillo" aria-hidden="true"></span><img alt="" draggable="false"><span class="pt-vh">JUGAR</span></span></button>
+            <div id="load-bar" role="progressbar" aria-label="Carga del juego" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="Cargando: 0 %"><i></i></div>
+            <div id="load-pct" aria-hidden="true">0 %</div>
+          </div>
+          <div class="pt-secundarios">
+            <button id="btn-sound-start" class="pt-pill" type="button" aria-pressed="true"><svg class="pt-ico pt-ico-si" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.2L12 5.6v12.8L7.2 14.5H4z" class="lleno"/><path d="M15.2 9.2a4 4 0 0 1 0 5.6M17.8 6.8a7.4 7.4 0 0 1 0 10.4"/></svg><svg class="pt-ico pt-ico-no" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.2L12 5.6v12.8L7.2 14.5H4z" class="lleno"/><path d="M15.5 9.5l5 5M20.5 9.5l-5 5"/></svg><span class="pt-txt">Sonido: sí</span></button>
+            <button id="btn-fs-start" class="pt-pill" type="button" aria-pressed="false" hidden><svg class="pt-ico pt-ico-entrar" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg><svg class="pt-ico pt-ico-salir" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5"/></svg><span class="pt-txt">Pantalla completa</span></button>
+            <button id="btn-settings-start" class="pt-pill pt-redondo" type="button" aria-label="Ajustes" aria-haspopup="dialog" aria-controls="settings" disabled><svg class="pt-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h9M18 7h1M5 12h3M12 12h7M5 17h11M20 17h-1"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="17" r="2"/></svg></button>
+          </div>
+          <!-- V10.6 (B6 §6.2): «Créditos» discreto en la línea del pie (se activa con el juego cargado, como el engranaje) -->
+          <p class="pt-pie">20 patatas · 6 canciones · <button id="btn-creditos-start" class="pt-pie-enlace" type="button" aria-haspopup="dialog" aria-controls="creditos" disabled>Créditos</button></p>
+          <div id="load-text">Cargando…</div>
+          <button id="btn-reset-start" class="pt-enlace" type="button" hidden>Empezar de cero</button>
+          <div id="start-error" class="error" hidden></div>
+        </div>
+        <!-- La radio de ANMI es un botón: enciende o apaga su música (se coloca sobre la radio de la imagen) -->
+        <button id="btn-radio" class="pt-btn-radio" type="button" aria-pressed="true" aria-label="Música de la radio"></button>
+      </div>
+    </section>
+
+    <div id="fade"></div>
+    <div id="debug" hidden></div>
+  </div>
+  <script type="module" src="./src/main.ts"></script>
+</body>
+</html>

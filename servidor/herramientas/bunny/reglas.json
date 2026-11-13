@@ -1,0 +1,96 @@
+[
+ {
+  "ActionType": 3,
+  "ActionParameter1": "0",
+  "Triggers": [
+   {
+    "Type": 0,
+    "PatternMatches": [
+     "*/e/*",
+     "*/salud",
+     "*/salud-version",
+     "*/game-config.json"
+    ],
+    "PatternMatchingType": 0
+   }
+  ],
+  "TriggerMatchingType": 0,
+  "Description": "bk: telemetria, salud y config nunca en cache",
+  "Enabled": true,
+  "OrderIndex": 1
+ },
+ {
+  "ActionType": 3,
+  "ActionParameter1": "60",
+  "Triggers": [
+   {
+    "Type": 0,
+    "PatternMatches": [
+     "*://*/",
+     "*/index.html",
+     "*/carga.json",
+     "*/manifest.webmanifest",
+     "*/robots.txt"
+    ],
+    "PatternMatchingType": 0
+   }
+  ],
+  "TriggerMatchingType": 0,
+  "Description": "bk: entrada y listas 60 s (cambian al publicar) (1)",
+  "Enabled": true,
+  "OrderIndex": 2
+ },
+ {
+  "ActionType": 3,
+  "ActionParameter1": "60",
+  "Triggers": [
+   {
+    "Type": 0,
+    "PatternMatches": [
+     "*/sitemap.xml",
+     "*/privacidad",
+     "*/?*"
+    ],
+    "PatternMatchingType": 0
+   }
+  ],
+  "TriggerMatchingType": 0,
+  "Description": "bk: entrada y listas 60 s (cambian al publicar) (2)",
+  "Enabled": true,
+  "OrderIndex": 4
+ },
+ {
+  "ActionType": 3,
+  "ActionParameter1": "31536000",
+  "Triggers": [
+   {
+    "Type": 0,
+    "PatternMatches": [
+     "*/build/*"
+    ],
+    "PatternMatchingType": 0
+   }
+  ],
+  "TriggerMatchingType": 0,
+  "Description": "bk: build con huella 1 ano",
+  "Enabled": true,
+  "OrderIndex": 3
+ },
+ {
+  "ActionType": 16,
+  "ActionParameter1": "31536000",
+  "Triggers": [
+   {
+    "Type": 0,
+    "PatternMatches": [
+     "*/build/*"
+    ],
+    "PatternMatchingType": 0
+   }
+  ],
+  "TriggerMatchingType": 0,
+  "Description": "bk: navegador guarda build 1 ano (como el origen: immutable)",
+  "Enabled": true,
+  "OrderIndex": 5
+ }
+]

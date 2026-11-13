@@ -1,0 +1,53 @@
+{
+ "version": 4,
+ "collected": [
+  "no_me_guillo.visible",
+  "no_me_guillo.medium",
+  "no_me_guillo.hidden",
+  "no_me_guillo.activity",
+  "nosvamosdeaqui.visible",
+  "nosvamosdeaqui.medium",
+  "nosvamosdeaqui.hidden",
+  "nosvamosdeaqui.activity",
+  "yinyang.visible",
+  "yinyang.medium",
+  "yinyang.hidden",
+  "yinyang.activity",
+  "tratratra.visible",
+  "tratratra.medium",
+  "tratratra.hidden",
+  "tratratra.activity",
+  "fashion_girl.visible",
+  "fashion_girl.medium",
+  "fashion_girl.hidden",
+  "fashion_girl.activity"
+ ],
+ "activities": {
+  "pantherTalk": true,
+  "skateTutorial": true,
+  "graffiti": true,
+  "bridgeTalk": true,
+  "danceCombo": true
+ },
+ "bridgeReached": true,
+ "finalDone": false,
+ "revealSeen": false,
+ "checkpoint": null,
+ "hints": [
+  "basic"
+ ],
+ "settings": {
+  "volume": 0.8,
+  "muted": false
+ },
+ "finalProof": null,
+ "checkpointRevision": 4,
+ "partials": {
+  "tutorialStep": 0,
+  "tutorialStarted": false,
+  "bridgeRest": 4,
+  "graffitiMask": null,
+  "graffitiCheck": 0,
+  "danceRounds": 0
+ }
+}

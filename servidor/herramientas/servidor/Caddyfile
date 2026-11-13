@@ -1,0 +1,140 @@
+# Bellakaventuras en el VPS de IONOS (oct 2026). Copia en el servidor: /etc/caddy/Caddyfile
+# Cambiar: editar este archivo en el Mac, subirlo y validar antes de recargar:
+#   if sudo -u caddy caddy validate --config /etc/caddy/Caddyfile; then systemctl reload caddy; fi
+
+{
+	servers {
+		protocols h1 h2 h3
+		# Cabeceras en 15 s como máximo (conexiones lentas a propósito). Sin límite de escritura:
+		# un móvil lento tiene que poder bajar 30 MB aunque tarde.
+		timeouts {
+			read_header 15s
+			read_body 30s
+			idle 2m
+		}
+		# CDN (Bunny, oct 2026): «trusted_proxies» con sus IP para ver la IP real del jugador (X-Forwarded-For).
+		# Lo escribe bk-cdn-ips; si no existe (sin CDN), el import no hace nada y todo sigue igual.
+		import /etc/caddy/cdn-*.caddy
+	}
+}
+
+(seguridad) {
+	header {
+		Strict-Transport-Security "max-age=86400"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Content-Security-Policy "frame-ancestors 'none'"
+		X-Frame-Options "DENY"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+		# Google puede indexar la web (decisión del usuario, 24 oct 2026): sin X-Robots-Tag; reglas en robots.txt del juego.
+		-Server
+	}
+}
+
+# Opción A (Bunny, 24 oct 2026): la dirección principal es www.bellakaventuras.com (la que puede ir por la CDN; IONOS no deja
+# apuntar la raíz a una CDN). La raíz redirige SIEMPRE a www (con o sin Bunny), salvo /salud y /salud-version, que siguen
+# respondiendo aquí para la vigilancia local (bk-vigilante) y externa (HetrixTools). 302 por ahora (reversible); 301 cuando sea definitivo.
+bellakaventuras.com {
+	import seguridad
+	handle /salud {
+		header Cache-Control "no-store"
+		respond "ok" 200
+	}
+	handle /salud-version {
+		header Cache-Control "no-store"
+		root * /srv/bellaka/current
+		rewrite * /salud.txt
+		file_server
+	}
+	handle {
+		redir https://www.bellakaventuras.com{uri}
+	}
+}
+
+www.bellakaventuras.com {
+	root * /srv/bellaka/current
+
+	# Contraseña mientras se prueba: /etc/caddy/acceso-pruebas.caddy (fuera de esta copia).
+	# Abrir al público: borrar ese archivo y recargar Caddy. Si no existe, el import no hace nada.
+	import /etc/caddy/acceso-*.caddy
+
+	# Cabeceras de seguridad en todas las respuestas.
+	import seguridad
+
+	# Para la vigilancia externa: responde sin contraseña y sin enseñar el juego.
+	handle /salud {
+		header Cache-Control "no-store"
+		respond "ok" 200
+	}
+
+	# Qué versión se sirve de verdad: lee current/salud.txt (lo escribe publicar.sh). Sin contraseña, como /salud.
+	handle /salud-version {
+		header Cache-Control "no-store"
+		rewrite * /salud.txt
+		file_server
+	}
+
+	# Página de privacidad: fuera de las versiones del juego y sin contraseña.
+	handle /privacidad {
+		header Cache-Control "public, max-age=0, must-revalidate"
+		rewrite * /privacidad.html
+		file_server {
+			root /srv/bellaka/paginas
+		}
+	}
+
+	# V10.6.1: récord del cronómetro de speedrun (lo escribe bk-record cada 2 min). Por /e/ para que Bunny no lo guarde nunca;
+	# log_skip: leerlo no queda en el registro (no ensucia las métricas). Sin el archivo, 404: el juego no enseña récord.
+	handle /e/record {
+		log_skip
+		header Cache-Control "no-store"
+		header Content-Type "application/json"
+		root * /var/lib/bk-record
+		rewrite * /record.json
+		file_server
+	}
+
+	# Señal de analítica («alguien ha pulsado JUGAR»): solo queda en el registro de accesos.
+	handle /e/* {
+		header Cache-Control "no-store"
+		respond 204
+	}
+
+	handle {
+		# Peticiones Range con 10 trozos o más: no las usa ningún navegador y sirven para gastar CPU.
+		# El Range simple (audio en Safari) sigue funcionando.
+		@muchos_rangos header_regexp Range ^bytes=([^,]*,){9,}
+		respond @muchos_rangos 416
+
+		# El modo de pruebas del juego (?bktest) sobrescribe la partida: no se ofrece en la web pública.
+		@modo_pruebas expression {query}.contains("bktest")
+		redir @modo_pruebas / 302
+
+		# build/* lleva el hash en el nombre: no cambia nunca.
+		@hashed path /build/*
+		header @hashed Cache-Control "public, max-age=31536000, immutable"
+		@nostore path /game-config.json
+		header @nostore Cache-Control "no-store"
+		# El resto: el navegador lo guarda pero pregunta si ha cambiado (304 si no).
+		@revalidar not path /build/* /game-config.json
+		header @revalidar Cache-Control "public, max-age=0, must-revalidate"
+		@manifiesto path *.webmanifest
+		header @manifiesto Content-Type "application/manifest+json"
+
+		# Primero el archivo precomprimido al publicar (brotli antes que zstd: 0,45 MB menos por visita, R7);
+		# si no hay, se comprime al vuelo (texto pequeño).
+		encode zstd gzip
+		file_server {
+			precompressed br zstd gzip
+		}
+	}
+
+	log {
+		output file /var/log/caddy/bellaka-acceso.log {
+			roll_size 100MiB
+			roll_keep 30
+			roll_keep_for 720h
+		}
+		format json
+	}
+}

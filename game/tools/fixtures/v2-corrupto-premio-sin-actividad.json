@@ -1,0 +1,26 @@
+{
+ "version": 3,
+ "collected": [
+  "no_me_guillo.visible",
+  "no_me_guillo.activity",
+  "yinyang.medium"
+ ],
+ "activities": {
+  "pantherTalk": false,
+  "skateTutorial": false,
+  "graffiti": false,
+  "bridgeTalk": false,
+  "danceCombo": false
+ },
+ "bridgeReached": false,
+ "finalDone": false,
+ "revealSeen": false,
+ "checkpoint": null,
+ "hints": [
+  "basic"
+ ],
+ "settings": {
+  "volume": 0.8,
+  "muted": false
+ }
+}

@@ -1,0 +1,161 @@
+#!/usr/bin/env python3
+# Contadores con aviso al móvil (ntfy, el mismo tema que el vigilante). Cada 5 min (bk-contadores.timer). Servidor: /usr/local/bin/bk-contadores
+#  1. Sesiones: cada 100 sesiones nuevas (aviso del juego «carga-portada» = alguien abre la web y carga la portada) → ntfy con
+#     cuántas han pulsado JUGAR. Lee el registro de Caddy por donde lo dejó (como el guardián). Descarta pruebas y las IP de «permitidos».
+#  2. Gasto de Bunny (cada 15 min): tráfico servido desde el inicio de la prueba × 0,01 $/GB (solo Europa y EE. UU. activas), o lo que
+#     diga la facturación si es mayor. Al 50 % del crédito (10 de 20 $) → aviso; al 90 % (18 $) → aviso urgente; una vez cada uno.
+#     Clave: /etc/bk/bunny.key (600).
+#   bk-contadores            una pasada
+#   bk-contadores --estado   cuenta actual y gasto, sin avisar
+#   bk-contadores --recontar vuelve a contar todo desde los registros (si alguna vez se descuadra)
+import glob, gzip, json, os, subprocess, sys, time, urllib.request
+LOG = os.environ.get("BK_LOG", "/var/log/caddy/bellaka-acceso.log")
+EST = os.environ.get("BK_EST", "/var/lib/bk-contadores")
+CREDITO, PRECIO_GB, DESDE = 20.0, 0.01, "2026-10-24"
+AVISOS = [(0.50, 4), (0.90, 5)]   # (parte del crédito, prioridad ntfy)
+CADA = 100
+
+def ntfy(titulo, texto, prio=3, etiquetas="bellaka"):
+    url = ""
+    try:
+        for l in open("/etc/bk/avisos.conf"):
+            if l.startswith("NTFY_URL="):
+                url = l.split("=", 1)[1].strip().strip('"')
+    except Exception:
+        pass
+    if url:
+        subprocess.run(["curl", "-s", "-m", "10", "-H", f"Title: {titulo}", "-H", f"Priority: {prio}", "-H", f"Tags: {etiquetas}", "-d", texto, url],
+                       capture_output=True)
+
+def permitidos():
+    try:
+        t = open("/etc/bk/bk.nft").read().split("set permitidos", 1)[1].split("elements", 1)[1].split("{", 1)[1].split("}", 1)[0]
+        return {x.strip() for x in t.split(",") if x.strip()}
+    except Exception:
+        return {"127.0.0.1"}
+
+def leer_estado():
+    try:
+        return json.load(open(os.path.join(EST, "estado.json")))
+    except Exception:
+        return {}
+
+def guardar_estado(e):
+    os.makedirs(EST, exist_ok=True)
+    tmp = os.path.join(EST, "estado.json.tmp"); json.dump(e, open(tmp, "w")); os.replace(tmp, os.path.join(EST, "estado.json"))
+
+def sumar(b, ok, c):
+    """Suma una línea del registro a c = [sesiones, jugar] si es un aviso de verdad (sin pruebas ni casa)."""
+    if b'"/e/carga-portada' not in b and b'"/e/jugar' not in b:
+        return
+    try:
+        r = json.loads(b)["request"]
+    except Exception:
+        return
+    h = r.get("headers", {}); ua = " ".join(h.get("User-Agent", []))
+    if "X-Bk-Prueba" in h or "BK-Prueba" in ua or "Headless" in ua or (r.get("client_ip") or r.get("remote_ip")) in ok:
+        return
+    u = r.get("uri", "")
+    if u.startswith("/e/carga-portada"):
+        c[0] += 1
+    elif u.startswith("/e/jugar"):
+        c[1] += 1
+
+
+def contar(e):
+    """Lee lo nuevo desde la última vez. Si Caddy ha rotado el registro (archivo nuevo), primero termina el viejo, que ya
+    está comprimido en el .gz más reciente: así no se pierde nada entre una pasada y la rotación."""
+    ok = permitidos(); st = os.stat(LOG); c = [0, 0]
+    pos = e.get("pos", 0)
+    if e.get("ino") is not None and (e.get("ino") != st.st_ino or pos > st.st_size):
+        viejos = sorted(glob.glob(LOG.replace(".log", "-*.log.gz")), key=os.path.getmtime)
+        if viejos:
+            try:
+                with gzip.open(viejos[-1], "rb") as f:
+                    n = 0
+                    for b in f:
+                        n += len(b)
+                        if n > pos:
+                            sumar(b, ok, c)
+            except Exception:
+                pass
+        pos = 0
+    with open(LOG, "rb") as f:
+        f.seek(pos)
+        for b in f:
+            if not b.endswith(b"\n"):
+                break
+            pos += len(b); sumar(b, ok, c)
+    e["ino"], e["pos"] = st.st_ino, pos
+    return c[0], c[1]
+
+
+def recontar(e):
+    """Cuenta TODO desde los registros guardados (los .gz y el actual) y deja la posición al final."""
+    ok = permitidos(); c = [0, 0]
+    for f in sorted(glob.glob(LOG.replace(".log", "-*.log.gz")), key=os.path.getmtime):
+        with gzip.open(f, "rb") as fh:
+            for b in fh:
+                sumar(b, ok, c)
+    st = os.stat(LOG); pos = 0
+    with open(LOG, "rb") as f:
+        for b in f:
+            if not b.endswith(b"\n"):
+                break
+            pos += len(b); sumar(b, ok, c)
+    e["ino"], e["pos"], e["sesiones"], e["jugar"] = st.st_ino, pos, c[0], c[1]
+
+def bunny_gasto():
+    try:
+        k = open("/etc/bk/bunny.key").read().strip(); z = open("/etc/bk/bunny.zona").read().strip()
+    except Exception:
+        return None
+    def get(u):
+        req = urllib.request.Request(u, headers={"AccessKey": k, "Accept": "application/json"})
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return json.load(r)
+    hoy = time.strftime("%Y-%m-%d")
+    s = get(f"https://api.bunny.net/statistics?pullZone={z}&dateFrom={DESDE}&dateTo={hoy}")
+    gb = s.get("TotalBandwidthUsed", 0) / 1e9
+    fact = get("https://api.bunny.net/billing").get("ThisMonthCharges", 0) or 0
+    return max(gb * PRECIO_GB, fact), gb
+
+def main():
+    e = leer_estado(); estado = len(sys.argv) > 1 and sys.argv[1] == "--estado"
+    if len(sys.argv) > 1 and sys.argv[1] == "--recontar":
+        recontar(e); guardar_estado(e); print(f"Recontado: {e['sesiones']} sesiones · {e['jugar']} JUGAR (aviso pendiente desde {e.get('avisado', 0)})"); return
+    primera = "ino" not in e
+    s, j = contar(e)
+    e["sesiones"] = e.get("sesiones", 0) + s; e["jugar"] = e.get("jugar", 0) + j
+    if primera:   # al instalarlo: cuenta lo que ya había sin avisar de golpe
+        e["avisado"] = e["sesiones"] // CADA * CADA
+    elif not estado and e["sesiones"] // CADA * CADA > e.get("avisado", 0):
+        e["avisado"] = e["sesiones"] // CADA * CADA
+        pct = round(100 * e["jugar"] / e["sesiones"]) if e["sesiones"] else 0
+        ntfy(f"🎮 {e['avisado']} sesiones", f"Bellakaventuras: {e['sesiones']} sesiones desde el lanzamiento · {e['jugar']} han pulsado JUGAR ({pct} %).",
+             prio=2, etiquetas="bellaka,video_game")
+    ahora = time.time()
+    if estado or ahora - e.get("gasto_ts", 0) >= 900:
+        e["gasto_ts"] = ahora
+        try:
+            g = bunny_gasto()
+        except Exception as x:
+            g = None; subprocess.run(["logger", "-t", "bk-contadores", f"Bunny no da el gasto: {x}"])
+        if g:
+            e["gasto"], e["gb"] = round(g[0], 2), round(g[1], 1)
+            hechos = set(e.get("gasto_avisos", [90] if e.get("gasto_avisado") else []))
+            for parte, prio in AVISOS:
+                p = int(parte * 100)
+                if not estado and g[0] >= CREDITO * parte and p not in hechos:
+                    hechos.add(p)
+                    extra = ("Pon un método de pago en Bunny ya, o la web dejará de ir por Bunny al acabarse (si pasa, el vigía avisa y se vuelve "
+                             "a IONOS: BUNNY.md).") if p >= 90 else "Conviene poner ya un método de pago en Bunny."
+                    ntfy(f"⚠️ BUNNY AL {p} %", f"Gasto de Bunny ≈ {g[0]:.2f} $ de {CREDITO:.0f} $ ({g[1]:.0f} GB). {extra}", prio=prio, etiquetas="bellaka,warning")
+            e["gasto_avisos"] = sorted(hechos)
+    guardar_estado(e)
+    if estado:
+        print(f"Sesiones desde el lanzamiento: {e['sesiones']} · JUGAR: {e['jugar']} · último aviso en {e.get('avisado', 0)}")
+        print(f"Bunny: ≈ {e.get('gasto', '?')} $ de {CREDITO:.0f} $ ({e.get('gb', '?')} GB) · avisos enviados: {', '.join(f'{p} %' for p in e.get('gasto_avisos', [])) or 'ninguno'} (se avisa al 50 % y al 90 %)")
+
+if __name__ == "__main__":
+    main()

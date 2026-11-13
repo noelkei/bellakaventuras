@@ -1,0 +1,135 @@
+#!/usr/bin/env python3
+# Guardián de abusos (cada minuto, systemd bk-guardian.timer). Copia en el servidor: /usr/local/bin/bk-guardian
+# Lee el registro JSON de Caddy y bloquea 1 h (nftables, tabla inet bk, solo puertos 80/443) a una IP que en 10 min
+# pase de UMBRAL_BYTES o UMBRAL_PET. Umbrales altos a propósito: con CGNAT muchos jugadores comparten una IP
+# (una visita nueva son ~31–46 MB). Nunca bloquea las IP de la lista «permitidos» de /etc/bk/bk.nft.
+#   bk-guardian            una pasada normal
+#   bk-guardian --seco F   lee el registro F entero y solo dice a quién bloquearía
+import json, os, subprocess, sys, time
+
+# BK_LOG y BK_EST solo para las pruebas (herramientas/pruebas/autocuracion.sh).
+LOG = os.environ.get("BK_LOG", "/var/log/caddy/bellaka-acceso.log")
+EST = os.environ.get("BK_EST", "/var/lib/bk-guardian")
+VENTANA = 600
+# 24 oct: subidos (antes 3 GB / 8.000) para no bloquear un colegio o una wifi pública con decenas de jugadores tras una
+# sola IP en el pico del anuncio. Un abusador de verdad (bucle de descargas a 1 Gbit/s o un aluvión de peticiones)
+# los pasa en 1–2 min igualmente.
+UMBRAL_BYTES = 6_000_000_000   # ~140 visitas completas (42 MB) en 10 min desde una sola IP
+UMBRAL_PET = 20_000            # una visita completa son ~140–210 peticiones
+BLOQUEO = "1h"
+
+def permitidos():
+    try:
+        txt = open(os.environ.get("BK_NFT", "/etc/bk/bk.nft")).read()
+        dentro = txt.split("set permitidos", 1)[1].split("elements", 1)[1].split("{", 1)[1].split("}", 1)[0]
+        ok = {x.strip() for x in dentro.split(",") if x.strip()}
+    except Exception:
+        ok = {"127.0.0.1"}
+    # Bunny (CDN, oct 2026): sus IP nunca se bloquean (con trusted_proxies ya se ve la IP real; esto es la red de seguridad).
+    # Si el archivo no existe (sin CDN), todo sigue igual.
+    try:
+        ok |= {x.strip() for x in open(os.environ.get("BK_CDN", "/etc/bk/cdn-ips.txt")) if x.strip() and not x.startswith("#")}
+    except Exception:
+        pass
+    return ok
+
+def lineas_nuevas(seco):
+    if seco:
+        with open(seco, errors="ignore") as f:
+            return f.readlines()
+    os.makedirs(EST, exist_ok=True)
+    pos_f = os.path.join(EST, "posicion.json")
+    try:
+        pos = json.load(open(pos_f))
+    except Exception:
+        pos = {}
+    try:
+        st = os.stat(LOG)
+    except FileNotFoundError:
+        return []
+    off = pos.get("off", 0) if pos.get("ino") == st.st_ino and pos.get("off", 0) <= st.st_size else 0
+    if off == 0 and pos.get("ino") is None:
+        off = max(0, st.st_size - 50_000_000)   # primera vez: solo lo último
+    with open(LOG, "rb") as f:
+        f.seek(off)
+        datos = f.read(200_000_000)
+    # solo líneas completas
+    corte = datos.rfind(b"\n") + 1
+    json.dump({"ino": st.st_ino, "off": off + corte}, open(pos_f, "w"))
+    return datos[:corte].decode(errors="ignore").splitlines()
+
+def main():
+    seco = sys.argv[2] if len(sys.argv) > 2 and sys.argv[1] == "--seco" else None
+    ahora = time.time()
+    ven_f = os.path.join(EST, "ventana.json")
+    try:
+        ven = {} if seco else json.load(open(ven_f))
+    except Exception:
+        ven = {}
+    reenvia = set()
+    rf = os.path.join(EST, "reenvia.json")
+    try:
+        reenvia = {k for k, t in json.load(open(rf)).items() if t > ahora - VENTANA}
+    except Exception:
+        pass
+    for l in lineas_nuevas(seco):
+        try:
+            r = json.loads(l)
+            ip = r["request"].get("client_ip") or r["request"]["remote_ip"]
+            # Una IP que trae X-Real-Ip y no está en la lista de Bunny: posible servidor nuevo de Bunny (la lista va con retraso)
+            if "X-Real-Ip" in r["request"].get("headers", {}) and ip == r["request"]["remote_ip"]:
+                reenvia.add(ip)
+            m = str(int(r["ts"] // 60))
+            b = int(r.get("size", 0))
+        except Exception:
+            continue
+        d = ven.setdefault(ip, {}).setdefault(m, [0, 0])
+        d[0] += b; d[1] += 1
+    lim = str(int((ahora - VENTANA) // 60))
+    if not seco:
+        ven = {ip: {m: v for m, v in mins.items() if m > lim} for ip, mins in ven.items()}
+        ven = {ip: mins for ip, mins in ven.items() if mins}
+        json.dump(ven, open(ven_f, "w"))
+    if not seco:
+        try:
+            viejo = json.load(open(rf))
+        except Exception:
+            viejo = {}
+        json.dump({k: viejo.get(k, ahora) for k in reenvia}, open(rf, "w"))
+    ok = permitidos()
+    cdn = os.path.exists(os.environ.get("BK_CDN", "/etc/bk/cdn-ips.txt"))
+    for ip, mins in ven.items():
+        tb = sum(v[0] for v in mins.values()); tp = sum(v[1] for v in mins.values())
+        if (tb > UMBRAL_BYTES or tp > UMBRAL_PET) and ip not in ok and ":" not in ip:
+            texto = f"{ip}: {tb/1e9:.1f} GB y {tp} peticiones en 10 min"
+            if cdn and ip in reenvia:
+                # Con la CDN puesta, bloquear a un servidor de Bunny tiraría la web para todos: no se bloquea; se renueva la lista y se avisa
+                if seco:
+                    print("NO BLOQUEA (posible Bunny)", texto); continue
+                subprocess.run(["logger", "-t", "bk-guardian", f"NO bloqueada (trae X-Real-Ip, posible Bunny nuevo) {texto}"])
+                subprocess.Popen(["/usr/local/bin/bk-cdn-ips"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                avisar("Posible IP nueva de Bunny", texto + ". No se ha bloqueado; se renueva la lista de IP de Bunny.")
+                continue
+            if seco:
+                print("BLOQUEARÍA", texto); continue
+            r = subprocess.run(["nft", "add", "element", "inet", "bk", "bloqueados", "{", ip, "timeout", BLOQUEO, "}"],
+                               capture_output=True, text=True)
+            subprocess.run(["logger", "-t", "bk-guardian", f"bloqueada 1 h {texto} ({r.returncode})"])
+            avisar(f"IP bloqueada 1 h", texto + ". Desbloquear: ssh bellaka nft delete element inet bk bloqueados { " + ip + " }")
+    if seco:
+        print(f"{len(ven)} IP vistas")
+
+def avisar(titulo, texto):
+    url = ""
+    try:
+        for l in open("/etc/bk/avisos.conf"):
+            if l.startswith("NTFY_URL="):
+                url = l.split("=", 1)[1].strip().strip('"')
+    except Exception:
+        pass
+    if url:
+        subprocess.run(["curl", "-s", "-m", "10", "-H", f"Title: {titulo}", "-H", "Priority: 4", "-d", texto, url],
+                       capture_output=True)
+
+if __name__ == "__main__":
+    main()

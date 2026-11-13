@@ -1,0 +1,116 @@
+#!/bin/bash
+# Vigilante local (cada minuto, systemd bk-vigilante.timer). Copia en el servidor: /usr/local/bin/bk-vigilante
+# Cura solo lo que se puede curar y avisa al móvil (ntfy) de lo demás.
+#   - Caddy no responde a /salud 2 veces seguidas → lo reinicia; si sigue sin responder → aviso urgente.
+#   - Disco > 85 % → limpia versiones viejas y el diario; aviso.
+#   - Memoria disponible < 250 MB → aviso.
+#   - Certificado con < 20 días → aviso (una vez al día).
+#   - Cada 15 min: huellas de lo servido frente a lo publicado.
+set -u
+CONF=/etc/bk/avisos.conf; [ -f "$CONF" ] && . "$CONF"   # NTFY_URL=https://ntfy.sh/<tema>
+EST=/var/lib/bk-vigilante; mkdir -p "$EST"
+DOM=bellakaventuras.com
+ahora=$(date +%s)
+
+avisar() {  # avisar <clave> <prioridad 1-5> <título> <texto>  (como mucho una vez cada 30 min por clave)
+	local f="$EST/aviso-$1"
+	logger -t bk-vigilante "$3: $4"   # en el diario siempre; al móvil, como mucho una vez cada 30 min
+	if [ -f "$f" ] && [ $((ahora - $(cat "$f"))) -lt 1800 ]; then return; fi
+	echo "$ahora" > "$f"
+	[ -n "${NTFY_URL:-}" ] && curl -s -m 10 -H "Title: $3" -H "Priority: $2" -H "Tags: bellaka" -d "$4" "$NTFY_URL" >/dev/null
+}
+resuelto() {  # resuelto <clave> <texto>: avisa de que vuelve a ir bien si antes hubo aviso
+	if [ -f "$EST/aviso-$1" ]; then rm -f "$EST/aviso-$1"
+		logger -t bk-vigilante "resuelto: $2"
+		[ -n "${NTFY_URL:-}" ] && curl -s -m 10 -H "Title: Resuelto" -H "Priority: 3" -d "$2" "$NTFY_URL" >/dev/null
+	fi
+}
+salud() { [ "$(curl -s -m 8 --resolve $DOM:443:127.0.0.1 https://$DOM/salud)" = ok ]; }
+
+# Última configuración buena: solo el Caddyfile (NUNCA acceso-pruebas.caddy: reponerlo volvería a cerrar la web).
+BUENO=/etc/bk/Caddyfile.bueno
+valida() { sudo -u caddy caddy validate --config /etc/caddy/Caddyfile >/dev/null 2>&1; }
+
+# 1. Caddy
+if salud; then
+	echo 0 > "$EST/fallos"; resuelto caddy "La web vuelve a responder."
+	if ! cmp -s /etc/caddy/Caddyfile "$BUENO" && valida; then cp /etc/caddy/Caddyfile "$BUENO"; logger -t bk-vigilante "Caddyfile guardado como bueno"; fi
+else
+	n=$(( $(cat "$EST/fallos" 2>/dev/null || echo 0) + 1 )); echo $n > "$EST/fallos"
+	# Parado del todo (no «activo»): no hace falta esperar al segundo fallo.
+	if [ $n -ge 2 ] || ! systemctl is-active --quiet caddy; then
+		systemctl restart caddy; sleep 4
+		if salud; then
+			echo 0 > "$EST/fallos"
+			avisar reinicio 3 "Caddy reiniciado" "No respondía; el vigilante lo reinició y ya responde."
+		elif [ -f "$BUENO" ] && ! cmp -s /etc/caddy/Caddyfile "$BUENO" && ! valida; then
+			# El Caddyfile no es válido: se aparta y se repone el último bueno.
+			roto=/etc/caddy/Caddyfile.roto-$(date +%Y%m%d-%H%M%S); cp /etc/caddy/Caddyfile "$roto"; cp "$BUENO" /etc/caddy/Caddyfile
+			systemctl restart caddy; sleep 4
+			if salud; then echo 0 > "$EST/fallos"
+				avisar caddyfile 4 "Caddyfile roto" "No arrancaba con el Caddyfile nuevo; se ha repuesto el último bueno. El roto está en $roto"
+			else avisar caddy 5 "WEB CAÍDA" "Caddyfile roto repuesto ($roto), pero Caddy sigue sin responder. Mira: ssh bellaka journalctl -u caddy -n 50"; fi
+		else
+			avisar caddy 5 "WEB CAÍDA" "Caddy no responde ni tras reiniciarlo ($n intentos). Mira: ssh bellaka journalctl -u caddy -n 50"
+		fi
+	fi
+fi
+
+# 1b. Que lo servido esté entero: index.html y su JS de entrada (/salud no mira el disco; R8)
+act=/srv/bellaka/current
+ent=$(grep -oE 'build/index-[A-Za-z0-9_-]+\.js' "$act/index.html" 2>/dev/null | head -1)
+if [ -n "$ent" ] && [ -s "$act/$ent" ]; then resuelto juego "El juego vuelve a estar completo."
+else avisar juego 5 "JUEGO ROTO" "Falta index.html o su JS en $(readlink $act). Volver atrás: ssh bellaka bk-version volver"; fi
+
+# 2. Disco
+uso=$(df --output=pcent / | tail -1 | tr -dc 0-9)
+if [ "$uso" -gt "${UMBRAL_DISCO:-85}" ]; then   # UMBRAL_DISCO: solo para las pruebas
+	/usr/local/bin/bk-version limpiar >/dev/null 2>&1; journalctl --vacuum-size=100M >/dev/null 2>&1
+	avisar disco 4 "Disco al ${uso} %" "Se han limpiado versiones viejas y el diario. Ahora: $(df --output=pcent / | tail -1)"
+else resuelto disco "Disco al ${uso} %."; fi
+
+# 3. Memoria
+libre=$(awk '/MemAvailable/{print int($2/1024)}' /proc/meminfo)
+if [ "$libre" -lt 250 ]; then avisar memoria 4 "Poca memoria" "Quedan ${libre} MB disponibles."; else resuelto memoria "Memoria normal (${libre} MB)."; fi
+
+# 4. Certificado (una vez por hora basta)
+if [ ! -f "$EST/cert" ] || [ $((ahora - $(stat -c %Y "$EST/cert"))) -ge 3600 ]; then
+	fin=$(echo | openssl s_client -connect 127.0.0.1:443 -servername $DOM 2>/dev/null | openssl x509 -noout -enddate 2>/dev/null | cut -d= -f2)
+	echo "$fin" > "$EST/cert"
+	if [ -n "$fin" ]; then
+		dias=$(( ($(date -d "$fin" +%s) - ahora) / 86400 ))
+		[ "$dias" -lt 20 ] && avisar cert 4 "Certificado: $dias días" "El certificado HTTPS caduca el $fin y Caddy no lo ha renovado."
+	fi
+fi
+
+# 5. Huellas de lo servido (cada 15 min): releases/.<id>.sha256 (lo escribe publicar.sh) frente a los archivos
+if [ ! -f "$EST/huellas" ] || [ $((ahora - $(stat -c %Y "$EST/huellas"))) -ge 900 ]; then
+	touch "$EST/huellas"
+	act=$(readlink -f /srv/bellaka/current); hf="/srv/bellaka/releases/.$(basename "$act").sha256"
+	if [ -f "$hf" ]; then
+		if ! (cd "$act" && sha256sum --quiet -c "$hf" >"$EST/huellas.txt" 2>&1); then
+			avisar huellas 5 "Archivos cambiados" "Lo que se sirve no coincide con lo publicado ($(wc -l < "$EST/huellas.txt") archivos). Mira: ssh bellaka cat $EST/huellas.txt"
+		else resuelto huellas "Las huellas vuelven a coincidir."; fi
+	fi
+fi
+
+# 6. Lo que se sirve es la versión activa (/salud-version frente a current; solo si la versión trae salud.txt)
+if [ -f /srv/bellaka/current/salud.txt ]; then
+	sv=$(curl -s -m 8 --resolve $DOM:443:127.0.0.1 https://$DOM/salud-version)
+	if [ "$sv" = "$(cat /srv/bellaka/current/salud.txt)" ]; then resuelto version "Se sirve la versión activa."
+	else avisar version 4 "Versión distinta" "La web dice «${sv:0:40}» y la activa es $(cat /srv/bellaka/current/salud.txt)."; fi
+fi
+
+# 7. Un parche pide reiniciar (sin reinicio automático esta semana: lo decide el usuario; R8 §3.5)
+if [ -f /var/run/reboot-required ]; then
+	f="$EST/aviso-reinicio-pendiente"
+	if [ ! -f "$f" ] || [ $((ahora - $(cat "$f"))) -ge 86400 ]; then echo "$ahora" > "$f"
+		logger -t bk-vigilante "Un parche pide reiniciar: $(tr '\n' ' ' < /var/run/reboot-required.pkgs 2>/dev/null)"
+		[ -n "${NTFY_URL:-}" ] && curl -s -m 10 -H "Title: Reinicio pendiente" -H "Priority: 2" \
+			-d "Un parche de seguridad pide reiniciar. Cuando haya poca gente: ssh bellaka systemctl reboot (vuelve en ~20 s)." "$NTFY_URL" >/dev/null
+	fi
+fi
+
+# Latido para un vigilante externo de tipo «hombre muerto» (Healthchecks.io), si está configurado.
+[ -n "${LATIDO_URL:-}" ] && curl -s -m 10 "$LATIDO_URL" >/dev/null
+exit 0

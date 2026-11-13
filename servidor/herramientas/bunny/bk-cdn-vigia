@@ -1,0 +1,65 @@
+#!/bin/bash
+# Vigía de la CDN (Bunny), cada 2 min (bk-cdn-vigia.timer). Copia en el servidor: /usr/local/bin/bk-cdn-vigia
+# Lo instala herramientas/bunny/servidor_cdn.sh --aplicar. Avisa al móvil (ntfy, el mismo tema que el vigilante) de:
+#   - Bunny no responde a /salud 3 veces seguidas (~6 min) → aviso URGENTE con cómo volver al servidor directo
+#   - Bunny sirve una portada que pide otro JS que el servidor (caché sin vaciar tras publicar) durante > 6 min → aviso
+#   - y «Resuelto» cuando vuelve a ir bien.
+# No cambia nada por sí solo: el servidor sigue sirviendo igual; volver al servidor directo es cambiar el DNS (ver BUNNY.md).
+set -u
+CONF=/etc/bk/avisos.conf; [ -f "$CONF" ] && . "$CONF"          # NTFY_URL
+CDN=/etc/bk/cdn.conf; [ -f "$CDN" ] && . "$CDN"                 # CDN_HOST=bellakaventuras.b-cdn.net (o el dominio, si va por Bunny)
+[ -n "${CDN_HOST:-}" ] || exit 0
+EST=/var/lib/bk-cdn-vigia; mkdir -p "$EST"; ahora=$(date +%s); DOM=bellakaventuras.com
+avisar() {  # avisar <clave> <prioridad> <título> <texto>  (como mucho una vez cada 30 min por clave)
+	local f="$EST/aviso-$1"; logger -t bk-cdn-vigia "$3: $4"
+	if [ -f "$f" ] && [ $((ahora - $(cat "$f"))) -lt 1800 ]; then return; fi
+	echo "$ahora" > "$f"
+	[ -n "${NTFY_URL:-}" ] && curl -s -m 10 -H "Title: $3" -H "Priority: $2" -H "Tags: bellaka,cdn" -d "$4" "$NTFY_URL" >/dev/null
+}
+resuelto() {
+	if [ -f "$EST/aviso-$1" ]; then rm -f "$EST/aviso-$1"; logger -t bk-cdn-vigia "resuelto: $2"
+		[ -n "${NTFY_URL:-}" ] && curl -s -m 10 -H "Title: Resuelto (CDN)" -H "Priority: 3" -d "$2" "$NTFY_URL" >/dev/null; fi
+}
+cuenta() { local n=$(( $(cat "$EST/$1" 2>/dev/null || echo 0) + 1 )); echo $n > "$EST/$1"; echo $n; }
+
+# 1. ¿Responde Bunny? (/salud pasa por Bunny hasta el servidor: si falla aquí y el servidor va bien, el fallo es de Bunny)
+if [ "$(curl -s -m 15 -A 'BK-Prueba/cdn-vigia' "https://$CDN_HOST/salud")" = ok ]; then
+	echo 0 > "$EST/fallos"; resuelto cdn "Bunny vuelve a responder."
+else
+	n=$(cuenta fallos)
+	if [ "$n" -ge 3 ]; then
+		if [ "$(curl -s -m 8 --resolve $DOM:443:127.0.0.1 https://$DOM/salud)" = ok ]; then
+			# Vuelta AUTOMÁTICA a IONOS (CONMUTAR_AUTO=si en cdn.conf): con 5 fallos seguidos (~10 min), el servidor bien y salida a
+			# internet (si el servidor no llega a internet, el fallo es suyo, no de Bunny), www pasa a apuntar al VPS. Volver a Bunny, a mano.
+			if [ "${CONMUTAR_AUTO:-no}" = si ] && [ "$n" -ge 5 ] && [ -x /usr/local/bin/bk-dns-www ] && [ -f /etc/bk/ionos-dns.key ] \
+			   && curl -s -m 10 -o /dev/null https://api.hosting.ionos.com/ && /usr/local/bin/bk-dns-www estado 2>/dev/null | grep -q "por Bunny"; then
+				if r=$(/usr/local/bin/bk-dns-www a-ionos 2>&1); then
+					logger -t bk-cdn-vigia "vuelta automática a IONOS: $r"
+					avisar vuelta 5 "VUELTO A IONOS (automático)" "Bunny no respondía desde hace ~$((n*2)) min: www apunta ya al servidor de IONOS (llega a todos en ~5 min). La web sigue. Cuando Bunny vuelva, encenderlo de nuevo a mano (BUNNY.md)."
+				else
+					avisar cdn 5 "BUNNY NO RESPONDE · NO PUDE VOLVER A IONOS" "Falló el cambio automático del DNS: $r. Hazlo a mano en IONOS: www → A 203.0.113.10 (BUNNY.md)."
+				fi
+			else
+				avisar cdn 5 "BUNNY NO RESPONDE" "Bunny falla desde hace ~$((n*2)) min y el servidor va bien. VOLVER A IONOS (2 min): ionos.es → Dominios & SSL → bellakaventuras.com → DNS → borrar el CNAME www y crear A · www · 203.0.113.10. En ~5-10 min todos van directos al servidor."
+			fi
+		fi   # si el servidor también falla, ya avisa el vigilante
+	fi
+fi
+
+# 2. ¿Sirve Bunny la versión actual? (solo si la portada responde 200: con contraseña de pruebas da 401 y se salta)
+srv=$(grep -o 'build/index-[A-Za-z0-9_-]*\.js' /srv/bellaka/current/index.html | head -1)
+cdnp=$(curl -s -m 15 -A 'BK-Prueba/cdn-vigia' -w '\n%{http_code}' "https://$CDN_HOST/")
+if [ "$(echo "$cdnp" | tail -1)" = 200 ] && [ -n "$srv" ]; then
+	if echo "$cdnp" | grep -q "$srv"; then echo 0 > "$EST/vieja"; resuelto vieja "Bunny ya sirve la versión actual."
+	else n=$(cuenta vieja); [ "$n" -ge 3 ] && avisar vieja 4 "Bunny sirve una versión vieja" "La portada de $CDN_HOST no pide $srv desde hace ~$((n*2)) min. Desde el Mac: herramientas/bunny/bunny.sh purgar"; fi
+fi
+
+# 3. Certificado de www en el servidor (una vez al día): con www detrás de Bunny, Caddy podría no renovarlo; y hace falta vigente
+#    para que la vuelta directa a IONOS funcione sin avisos de seguridad.
+if [ ! -f "$EST/cert" ] || [ $((ahora - $(stat -c %Y "$EST/cert"))) -ge 86400 ]; then
+	touch "$EST/cert"
+	fin=$(echo | openssl s_client -connect 127.0.0.1:443 -servername www.$DOM 2>/dev/null | openssl x509 -noout -enddate 2>/dev/null | cut -d= -f2)
+	d=$(( ( $(date -d "$fin" +%s 2>/dev/null || echo 0) - ahora ) / 86400 ))
+	if [ "$d" -lt 20 ]; then avisar certwww 4 "Certificado de www" "El certificado de www.$DOM en el servidor caduca en $d días (sin él, volver directo a IONOS daría avisos). Mira: ssh bellaka journalctl -u caddy | grep -i www"
+	else resuelto certwww "El certificado de www vuelve a estar al día ($d días)."; fi
+fi

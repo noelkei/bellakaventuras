@@ -1,0 +1,644 @@
+{
+  "compressed": true,
+  "totals": {
+    "all": 15469620,
+    "glb": 12517848,
+    "tex": 475134,
+    "audio": 2476638
+  },
+  "files": [
+    {
+      "kind": "glb",
+      "src": "game/.cache/ANMI_GAME.glb",
+      "dst": "public/assets/character/anmi.glb",
+      "before": 31889704,
+      "after": 4821548,
+      "tris": 117674,
+      "animations": [
+        "Breakdance_1990",
+        "FunnyDancing_02",
+        "Hip_Hop_Dance_1",
+        "Hip_Hop_Dance_2",
+        "Hip_Hop_Dance_3",
+        "SK_Air",
+        "SK_Bail",
+        "SK_Brake",
+        "SK_CarveL",
+        "SK_CarveR",
+        "SK_Catch",
+        "SK_CrouchRide",
+        "SK_CrouchWalk",
+        "SK_Dismount",
+        "SK_FlipCrouch",
+        "SK_FlipHeel",
+        "SK_FlipKick",
+        "SK_FlipOpen",
+        "SK_FlipTuck",
+        "SK_GetUp",
+        "SK_Grab",
+        "SK_Grind",
+        "SK_HopBoard",
+        "SK_Idle",
+        "SK_IdleBoard",
+        "SK_ImpactLand",
+        "SK_ImpactStar",
+        "SK_Land",
+        "SK_LandHard",
+        "SK_Manual",
+        "SK_Mount",
+        "SK_Pop",
+        "SK_Push",
+        "SK_Ride",
+        "SK_Scoot",
+        "SK_Stand",
+        "SK_WalkBoard",
+        "Step_Hip_Hop_Dance"
+      ]
+    },
+    {
+      "kind": "glb",
+      "src": "game/.cache/npcs/la_pantera.glb",
+      "dst": "public/assets/npcs/la_pantera.glb",
+      "before": 23352884,
+      "after": 1170216,
+      "tris": 18405,
+      "animations": [
+        "Idle",
+        "SitIdle",
+        "SitTalk",
+        "Talk",
+        "Wave"
+      ]
+    },
+    {
+      "kind": "glb",
+      "src": "game/.cache/npcs/aissa.glb",
+      "dst": "public/assets/npcs/aissa.glb",
+      "before": 19346736,
+      "after": 911984,
+      "tris": 17984,
+      "animations": [
+        "Idle",
+        "Talk"
+      ]
+    },
+    {
+      "kind": "glb",
+      "src": "game/.cache/npcs/juseph.glb",
+      "dst": "public/assets/npcs/juseph.glb",
+      "before": 22575072,
+      "after": 1003436,
+      "tris": 17953,
+      "animations": [
+        "Idle",
+        "Talk"
+      ]
+    },
+    {
+      "kind": "glb",
+      "src": "game/.cache/npcs/bella.glb",
+      "dst": "public/assets/npcs/bella.glb",
+      "before": 44264492,
+      "after": 1395792,
+      "tris": 24116,
+      "animations": [
+        "Cheer",
+        "Jump",
+        "Sway"
+      ]
+    },
+    {
+      "kind": "glb",
+      "src": "environments/assets_derived/boombox/BOOMBOX_LOD0.glb",
+      "dst": "public/assets/props/boombox.glb",
+      "before": 6115244,
+      "after": 1052948,
+      "tris": 29998,
+      "animations": []
+    },
+    {
+      "kind": "glb",
+      "src": "environments/assets_derived/fry/FRY_GAME.glb",
+      "dst": "public/assets/props/fry.glb",
+      "before": 941396,
+      "after": 144792,
+      "tris": 1500,
+      "animations": []
+    },
+    {
+      "kind": "glb",
+      "src": "assets/derived/v3/props/palm_straight/palm_straight.glb",
+      "dst": "public/assets/props/palm_straight.glb",
+      "before": 429008,
+      "after": 61416,
+      "tris": 998,
+      "animations": []
+    },
+    {
+      "kind": "glb",
+      "src": "assets/derived/v3/props/palm_lean/palm_lean.glb",
+      "dst": "public/assets/props/palm_lean.glb",
+      "before": 450744,
+      "after": 62712,
+      "tris": 1000,
+      "animations": []
+    },
+    {
+      "kind": "glb",
+      "src": "assets/derived/v3/props/tree_compact/tree_compact.glb",
+      "dst": "public/assets/props/tree_compact.glb",
+      "before": 429812,
+      "after": 69656,
+      "tris": 1500,
+      "animations": []
+    },
+    {
+      "kind": "glb",
+      "src": "assets/derived/v3/props/tree_open/tree_open.glb",
+      "dst": "public/assets/props/tree_open.glb",
+      "before": 457456,
+      "after": 81208,
+      "tris": 1500,
+      "animations": []
+    },
+    {
+      "kind": "glb",
+      "src": "assets/derived/v3/props/shrub/shrub.glb",
+      "dst": "public/assets/props/shrub.glb",
+      "before": 161888,
+      "after": 60024,
+      "tris": 1600,
+      "animations": []
+    },
+    {
+      "kind": "glb",
+      "src": "assets/derived/v3/props/lamp_double/lamp_double.glb",
+      "dst": "public/assets/props/lamp_double.glb",
+      "before": 126840,
+      "after": 26616,
+      "tris": 498,
+      "animations": []
+    },
+    {
+      "kind": "glb",
+      "src": "assets/derived/v3/props/speaker/speaker.glb",
+      "dst": "public/assets/props/speaker.glb",
+      "before": 96304,
+      "after": 26572,
+      "tris": 1244,
+      "animations": []
+    },
+    {
+      "kind": "glb",
+      "src": "assets/derived/v3/props/planter_rect/planter_rect.glb",
+      "dst": "public/assets/props/planter_rect.glb",
+      "before": 13412,
+      "after": 8052,
+      "tris": 108,
+      "animations": []
+    },
+    {
+      "kind": "glb",
+      "src": "assets/derived/v4/vehicles/limo/limo.glb",
+      "dst": "public/assets/props/limo.glb",
+      "before": 3955080,
+      "after": 593964,
+      "tris": 30000,
+      "animations": []
+    },
+    {
+      "kind": "glb",
+      "src": "assets/derived/v4/vehicles/car/car.glb",
+      "dst": "public/assets/props/car.glb",
+      "before": 3387492,
+      "after": 549696,
+      "tris": 24824,
+      "animations": []
+    },
+    {
+      "kind": "glb",
+      "src": "assets/derived/v4/nmg/glb/nmg_kit.glb",
+      "dst": "public/assets/nmg/nmg_kit.glb",
+      "before": 1447660,
+      "after": 428996,
+      "tris": 1315,
+      "animations": [],
+      "sourceSha256": "c046c8d11f2bff87017715c1286dab6a00919bd4acf37da4cf5bbc23744520ba",
+      "recipeSha256": "3076ebdfe171d21795c270e62f4a79ca07ed04ed8f7bbebb2a29e59a25a1bf5c",
+      "contractSha256": "2371570f5f91cfbed01873ca97a80352dc95e79f5bf8187b875d8873ebb2a3f7",
+      "nodes": [
+        "nmg_platform",
+        "nmg_heart",
+        "nmg_box_small",
+        "nmg_box_medium",
+        "nmg_ledge_long",
+        "nmg_u",
+        "nmg_quarter",
+        "nmg_bed",
+        "nmg_bench"
+      ]
+    },
+    {
+      "kind": "glb",
+      "src": "assets/derived/v4/nmg/glb/nmg_shrub_low.glb",
+      "dst": "public/assets/props/nmg_shrub_low.glb",
+      "before": 15288,
+      "after": 8996,
+      "tris": 180,
+      "animations": [],
+      "sourceSha256": "e7754dc8442a5c4bd350320693403655c8c562dffd82cf94818e38f246f36116",
+      "recipeSha256": "39503d524ead4f574113354469c13f75a0909b1a8b497ff6bb3766cd184ca884"
+    },
+    {
+      "kind": "glb",
+      "src": "assets/derived/v4/nmg/glb/nmg_shrub_mid.glb",
+      "dst": "public/assets/props/nmg_shrub_mid.glb",
+      "before": 16964,
+      "after": 9628,
+      "tris": 204,
+      "animations": [],
+      "sourceSha256": "af412572eac32f8f9e84e5f2afd26f9e0e7e4950292f28d0fc15cf6b77c125ea",
+      "recipeSha256": "39503d524ead4f574113354469c13f75a0909b1a8b497ff6bb3766cd184ca884"
+    },
+    {
+      "kind": "glb",
+      "src": "assets/derived/v4/nmg/glb/nmg_shrub_tall.glb",
+      "dst": "public/assets/props/nmg_shrub_tall.glb",
+      "before": 13608,
+      "after": 8356,
+      "tris": 156,
+      "animations": [],
+      "sourceSha256": "5c213947e6a80eb3c184f8bec6db994f6f30d7d1fdd8dcd470afeeb1310d1808",
+      "recipeSha256": "39503d524ead4f574113354469c13f75a0909b1a8b497ff6bb3766cd184ca884"
+    },
+    {
+      "kind": "glb",
+      "src": "assets/derived/v4/nmg/glb/nmg_tree_round.glb",
+      "dst": "public/assets/props/nmg_tree_round.glb",
+      "before": 13644,
+      "after": 8224,
+      "tris": 168,
+      "animations": [],
+      "sourceSha256": "04c1b512233f4029d531dd626d2c86111e6c755d03abcc56824147a8be7879a6",
+      "recipeSha256": "39503d524ead4f574113354469c13f75a0909b1a8b497ff6bb3766cd184ca884"
+    },
+    {
+      "kind": "glb",
+      "src": "assets/derived/v4/nmg/glb/nmg_tree_open.glb",
+      "dst": "public/assets/props/nmg_tree_open.glb",
+      "before": 26132,
+      "after": 13016,
+      "tris": 328,
+      "animations": [],
+      "sourceSha256": "85515309086aac4e8738f6d040e63560b5aa38acca124c89c2bcc8a1812f28ee",
+      "recipeSha256": "39503d524ead4f574113354469c13f75a0909b1a8b497ff6bb3766cd184ca884"
+    },
+    {
+      "kind": "tex",
+      "src": "Imaginario ANMI/04_Frame_2147238616/PNG/01-rana-sapo.png",
+      "dst": "public/assets/tex/G_nmg_rana.webp",
+      "before": 203257,
+      "after": 26162,
+      "sourceSha256": "0f943f53bfa559e6faf36e6428d7fd8414117f909a40030d328836ee85737557"
+    },
+    {
+      "kind": "tex",
+      "src": "Imaginario ANMI/04_Frame_2147238616/PNG/03-mano-con-gato.png",
+      "dst": "public/assets/tex/G_nmg_mano.webp",
+      "before": 239419,
+      "after": 31446,
+      "sourceSha256": "5f4fb7076d682d74f072b21094250b0c9e87730e4d1a871d6e8160047c021b1a"
+    },
+    {
+      "kind": "tex",
+      "src": "assets/derived/v4/nmg/tex/T_nmg_floor.png",
+      "dst": "public/assets/tex/T_nmg_floor.webp",
+      "before": 96098,
+      "after": 24416,
+      "sourceSha256": "29f9b363e0279152262574af4db74d0d6903aa0e46fa0a19211be66b288a3e0d"
+    },
+    {
+      "kind": "tex",
+      "src": "assets/derived/v4/nmg/tex/T_nmg_floor_pink.png",
+      "dst": "public/assets/tex/T_nmg_floor_pink.webp",
+      "before": 93050,
+      "after": 22622,
+      "sourceSha256": "b6db55adde285a97b7272674ff007ab1eab16b5b04c7f6ec224c5391b75fe587"
+    },
+    {
+      "kind": "tex",
+      "src": "environments/textures/T_concrete_cream.png",
+      "dst": "public/assets/tex/T_concrete_cream.webp",
+      "before": 165907,
+      "after": 2686
+    },
+    {
+      "kind": "tex",
+      "src": "environments/textures/T_concrete_pink.png",
+      "dst": "public/assets/tex/T_concrete_pink.webp",
+      "before": 119549,
+      "after": 2530
+    },
+    {
+      "kind": "tex",
+      "src": "environments/textures/T_concrete_urbex.png",
+      "dst": "public/assets/tex/T_concrete_urbex.webp",
+      "before": 158822,
+      "after": 4014
+    },
+    {
+      "kind": "tex",
+      "src": "environments/textures/T_concrete_rooftop.png",
+      "dst": "public/assets/tex/T_concrete_rooftop.webp",
+      "before": 120479,
+      "after": 3468
+    },
+    {
+      "kind": "tex",
+      "src": "environments/textures/T_wall_plaster_warm.png",
+      "dst": "public/assets/tex/T_wall_plaster_warm.webp",
+      "before": 39038,
+      "after": 1372
+    },
+    {
+      "kind": "tex",
+      "src": "environments/textures/T_wood_planks_painted.png",
+      "dst": "public/assets/tex/T_wood_planks_painted.webp",
+      "before": 110547,
+      "after": 4122
+    },
+    {
+      "kind": "tex",
+      "src": "environments/textures/T_speaker_grille.png",
+      "dst": "public/assets/tex/T_speaker_grille.webp",
+      "before": 2931,
+      "after": 5306
+    },
+    {
+      "kind": "tex",
+      "src": "environments/textures/T_led_floor.png",
+      "dst": "public/assets/tex/T_led_floor.webp",
+      "before": 3690,
+      "after": 6872
+    },
+    {
+      "kind": "tex",
+      "src": "environments/textures/T_edge_stripes.png",
+      "dst": "public/assets/tex/T_edge_stripes.webp",
+      "before": 1070,
+      "after": 3700
+    },
+    {
+      "kind": "tex",
+      "src": "environments/textures/T_facade_a.png",
+      "dst": "public/assets/tex/T_facade_a.webp",
+      "before": 3240,
+      "after": 3126
+    },
+    {
+      "kind": "tex",
+      "src": "environments/textures/T_facade_b.png",
+      "dst": "public/assets/tex/T_facade_b.webp",
+      "before": 6469,
+      "after": 3748
+    },
+    {
+      "kind": "tex",
+      "src": "environments/textures/T_facade_c.png",
+      "dst": "public/assets/tex/T_facade_c.webp",
+      "before": 6199,
+      "after": 3404
+    },
+    {
+      "kind": "tex",
+      "src": "environments/textures/G_nomeguillo.png",
+      "dst": "public/assets/tex/G_nomeguillo.webp",
+      "before": 74848,
+      "after": 38406
+    },
+    {
+      "kind": "tex",
+      "src": "environments/textures/G_tratratra.png",
+      "dst": "public/assets/tex/G_tratratra.webp",
+      "before": 25630,
+      "after": 26122
+    },
+    {
+      "kind": "tex",
+      "src": "environments/textures/G_splat_pink.png",
+      "dst": "public/assets/tex/G_splat_pink.webp",
+      "before": 4038,
+      "after": 4440
+    },
+    {
+      "kind": "tex",
+      "src": "environments/textures/G_sticker_star.png",
+      "dst": "public/assets/tex/G_sticker_star.webp",
+      "before": 1691,
+      "after": 2554
+    },
+    {
+      "kind": "tex",
+      "src": "environments/textures/G_takeoff_chevrons.png",
+      "dst": "public/assets/tex/G_takeoff_chevrons.webp",
+      "before": 4355,
+      "after": 7442
+    },
+    {
+      "kind": "tex",
+      "src": "environments/textures/G_landing_zone.png",
+      "dst": "public/assets/tex/G_landing_zone.webp",
+      "before": 8427,
+      "after": 8504
+    },
+    {
+      "kind": "tex",
+      "src": "environments/textures/G_floor_ring.png",
+      "dst": "public/assets/tex/G_floor_ring.webp",
+      "before": 9878,
+      "after": 16312
+    },
+    {
+      "kind": "tex",
+      "src": "environments/textures/G_sticker_heart.png",
+      "dst": "public/assets/tex/G_sticker_heart.webp",
+      "before": 1665,
+      "after": 2826
+    },
+    {
+      "kind": "tex",
+      "src": "environments/textures_remake/T_dirt.png",
+      "dst": "public/assets/tex/T_dirt.webp",
+      "before": 141405,
+      "after": 7926
+    },
+    {
+      "kind": "tex",
+      "src": "environments/textures_remake/T_bola_ground.png",
+      "dst": "public/assets/tex/T_bola_ground.webp",
+      "before": 162604,
+      "after": 7152
+    },
+    {
+      "kind": "tex",
+      "src": "environments/textures_remake/T_bola_box.png",
+      "dst": "public/assets/tex/T_bola_box.webp",
+      "before": 83234,
+      "after": 4098
+    },
+    {
+      "kind": "tex",
+      "src": "environments/textures_remake/T_asphalt.png",
+      "dst": "public/assets/tex/T_asphalt.webp",
+      "before": 75714,
+      "after": 22516
+    },
+    {
+      "kind": "tex",
+      "src": "environments/textures_remake/T_grass.png",
+      "dst": "public/assets/tex/T_grass.webp",
+      "before": 222794,
+      "after": 6908
+    },
+    {
+      "kind": "tex",
+      "src": "environments/textures_remake/T_yy_final.png",
+      "dst": "public/assets/tex/T_yy_final.webp",
+      "before": 406940,
+      "after": 27154
+    },
+    {
+      "kind": "tex",
+      "src": "environments/textures_remake/T_yy_stencil.png",
+      "dst": "public/assets/tex/T_yy_stencil.webp",
+      "before": 383554,
+      "after": 29068
+    },
+    {
+      "kind": "tex",
+      "src": "environments/textures_remake/T_yy_mask.png",
+      "dst": "public/assets/tex/T_yy_mask.webp",
+      "before": 17553,
+      "after": 4818
+    },
+    {
+      "kind": "tex",
+      "src": "environments/textures_remake/T_graffiti_wall.png",
+      "dst": "public/assets/tex/T_graffiti_wall.webp",
+      "before": 207007,
+      "after": 31226
+    },
+    {
+      "kind": "tex",
+      "src": "environments/textures_remake/T_concrete_light.png",
+      "dst": "public/assets/tex/T_concrete_light.webp",
+      "before": 104635,
+      "after": 3702
+    },
+    {
+      "kind": "tex",
+      "src": "assets/derived/v4/nmg/tex/T_nmg_heart_front_v4.png",
+      "dst": "public/assets/tex/T_nmg_heart_front.webp",
+      "before": 156594,
+      "after": 40294
+    },
+    {
+      "kind": "tex",
+      "src": "assets/derived/v4/nmg/tex/T_nmg_ledge_front_v4.png",
+      "dst": "public/assets/tex/T_nmg_ledge_front.webp",
+      "before": 56109,
+      "after": 14190
+    },
+    {
+      "kind": "tex",
+      "src": "assets/derived/v3/nmg/tex/T_nmg_plat_side.png",
+      "dst": "public/assets/tex/T_nmg_plat_side.webp",
+      "before": 77004,
+      "after": 20482
+    },
+    {
+      "kind": "audio",
+      "src": "assets/derived/v4/audio/yinyang-v4.m4a",
+      "dst": "public/audio/yinyang-v4.m4a",
+      "before": 489730,
+      "after": 489730,
+      "seconds": [
+        8,
+        38
+      ],
+      "samples": 1440000,
+      "sha256": "872b2c8f5087437fdd2e3c77f23f334ccef3a21dfa7dcac184fe0260a78499a6",
+      "sourceSha256": "dd5febe3eb6c15333c0e0b9f573973ecc61315e8047717fb842966ee8dde67a6"
+    },
+    {
+      "kind": "audio",
+      "src": "assets/derived/v4/audio/fashion_girl-v4.m4a",
+      "dst": "public/audio/fashion_girl-v4.m4a",
+      "before": 589781,
+      "after": 589781,
+      "seconds": [
+        47,
+        83
+      ],
+      "samples": 1728000,
+      "sha256": "587e0e1ed90ae8d04582e3e5c73ace9b0fbdfd5164378bb8a62ab019db0c08d8",
+      "sourceSha256": "d86037ae0f47042a6161975bb991d836fde5f8a6268d66158a796fcdd5f355d5"
+    },
+    {
+      "kind": "audio",
+      "src": "assets/derived/v4/audio/no_me_guillo-v4.m4a",
+      "dst": "public/audio/no_me_guillo-v4.m4a",
+      "before": 249484,
+      "after": 249484,
+      "seconds": [
+        70,
+        85
+      ],
+      "samples": 720000,
+      "sha256": "de2c502ae0d40e8e30ee0d4b00faed20eaf3d6c6e805df2b34c8a9ce5f367104",
+      "sourceSha256": "9329a14c7da747677b9700c30d726d3c202a1a630a07f8c4f2677fa1399d5091"
+    },
+    {
+      "kind": "audio",
+      "src": "assets/derived/v4/audio/tratratra-v4.m4a",
+      "dst": "public/audio/tratratra-v4.m4a",
+      "before": 393461,
+      "after": 393461,
+      "seconds": [
+        10,
+        34
+      ],
+      "samples": 1152000,
+      "sha256": "f834aeb96c72ac232696a9e0dfb1c26b542d0d65dd257b2f0fd031e3bda059de",
+      "sourceSha256": "b9c3a53c7e30de051bdd2de18a1c0f339555524658ba7111f50841e31bcd28cb"
+    },
+    {
+      "kind": "audio",
+      "src": "assets/derived/v4/audio/secrenovio-v4.m4a",
+      "dst": "public/audio/secrenovio-v4.m4a",
+      "before": 312914,
+      "after": 312914,
+      "seconds": [
+        42,
+        61
+      ],
+      "samples": 912000,
+      "sha256": "43040b7e1c33f30853ffdfd96b1799545b646b70191f210162a1c94ff62a37ec",
+      "sourceSha256": "dd35b0d9057e4ba826327d97678e697d189619b0001ca56707f57fce1fee946b"
+    },
+    {
+      "kind": "audio",
+      "src": "assets/derived/v4/audio/nosvamosdeaqui-v4.m4a",
+      "dst": "public/audio/nosvamosdeaqui-v4.m4a",
+      "before": 441268,
+      "after": 441268,
+      "seconds": [
+        33,
+        60
+      ],
+      "samples": 1296000,
+      "sha256": "26604aab383651684abe5fc87f503407df0c921bd8824a6322225b79e85c2015",
+      "sourceSha256": "27f94ba2470ae0442800a84bdfebb7306bec8e4f78a23d869bf657c8e912a60c"
+    }
+  ]
+}

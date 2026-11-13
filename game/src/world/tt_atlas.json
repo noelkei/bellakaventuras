@@ -1,0 +1,260 @@
+{
+ "_comment": "Generado por assets/derived/v7/tratratra/make_tt_textures.py (no editar a mano). UV con origen arriba-izquierda (flipY = false).",
+ "paint": {
+  "metres": 6.4,
+  "drip": {
+   "v": [
+    0.0,
+    0.75
+   ],
+   "metres": 1.2
+  },
+  "bleed": {
+   "v": [
+    0.765625,
+    1.0
+   ],
+   "metres": 0.375
+  }
+ },
+ "graffiti": {
+  "px_per_m": 424,
+  "size": 2048,
+  "cells": {
+   "G01": {
+    "uv": [
+     0.523438,
+     0.313477,
+     0.782227,
+     0.58252
+    ],
+    "aspect": 0.96189,
+    "px": [
+     530,
+     551
+    ],
+    "cell_m": [
+     1.25,
+     1.3
+    ],
+    "source": "output/imagegen/tratratra-graffiti-v1-2026-10-13/01-tres-actitudes.png"
+   },
+   "G02": {
+    "uv": [
+     0.0,
+     0.847168,
+     0.281738,
+     0.987793
+    ],
+    "aspect": 2.00347,
+    "px": [
+     577,
+     288
+    ],
+    "cell_m": [
+     1.36,
+     0.68
+    ],
+    "source": "output/imagegen/tratratra-graffiti-v1-2026-10-13/02-limo-crew-tratratra.png"
+   },
+   "G03": {
+    "uv": [
+     0.492188,
+     0.0,
+     0.750977,
+     0.300293
+    ],
+    "aspect": 0.86179,
+    "px": [
+     530,
+     615
+    ],
+    "cell_m": [
+     1.25,
+     1.45
+    ],
+    "source": "output/imagegen/tratratra-graffiti-v1-2026-10-13/03-anmi-en-vuelo.png"
+   },
+   "G04": {
+    "uv": [
+     0.253906,
+     0.616699,
+     0.512695,
+     0.82373
+    ],
+    "aspect": 1.25,
+    "px": [
+     530,
+     424
+    ],
+    "cell_m": [
+     1.25,
+     1.0
+    ],
+    "source": "output/imagegen/tratratra-graffiti-v1-2026-10-13/04-arriba-del-puente.png"
+   },
+   "G05": {
+    "uv": [
+     0.284668,
+     0.847168,
+     0.522949,
+     0.975586
+    ],
+    "aspect": 1.85551,
+    "px": [
+     488,
+     263
+    ],
+    "cell_m": [
+     1.15,
+     0.62
+    ],
+    "source": "output/imagegen/tratratra-graffiti-v1-2026-10-13/05-rueda-alada.png"
+   },
+   "G06": {
+    "uv": [
+     0.0,
+     0.0,
+     0.258789,
+     0.310547
+    ],
+    "aspect": 0.83333,
+    "px": [
+     530,
+     636
+    ],
+    "cell_m": [
+     1.25,
+     1.5
+    ],
+    "source": "output/imagegen/tratratra-graffiti-v1-2026-10-13/06-gato-al-volante.png"
+   },
+   "G07": {
+    "uv": [
+     0.261719,
+     0.0,
+     0.489258,
+     0.310547
+    ],
+    "aspect": 0.7327,
+    "px": [
+     466,
+     636
+    ],
+    "cell_m": [
+     1.1,
+     1.5
+    ],
+    "source": "output/imagegen/tratratra-graffiti-v1-2026-10-13/07-rana-trepadora.png"
+   },
+   "G08": {
+    "uv": [
+     0.515625,
+     0.616699,
+     0.774414,
+     0.82373
+    ],
+    "aspect": 1.25,
+    "px": [
+     530,
+     424
+    ],
+    "cell_m": [
+     1.25,
+     1.0
+    ],
+    "source": "output/imagegen/tratratra-graffiti-v1-2026-10-13/08-ai-en-la-pasarela.png"
+   },
+   "G09": {
+    "uv": [
+     0.261719,
+     0.313477,
+     0.520508,
+     0.603516
+    ],
+    "aspect": 0.89226,
+    "px": [
+     530,
+     594
+    ],
+    "cell_m": [
+     1.25,
+     1.4
+    ],
+    "source": "output/imagegen/tratratra-graffiti-v1-2026-10-13/09-mona-en-la-limo.png"
+   },
+   "W1": {
+    "uv": [
+     0.785156,
+     0.313477,
+     0.90918,
+     0.541016
+    ],
+    "aspect": 0.54506,
+    "px": [
+     254,
+     466
+    ],
+    "cell_m": [
+     0.6,
+     1.1
+    ],
+    "source": "velo procedural (sin motivo)"
+   },
+   "W2": {
+    "uv": [
+     0.0,
+     0.616699,
+     0.124023,
+     0.844238
+    ],
+    "aspect": 0.54506,
+    "px": [
+     254,
+     466
+    ],
+    "cell_m": [
+     0.6,
+     1.1
+    ],
+    "source": "velo procedural (sin motivo)"
+   },
+   "W3": {
+    "uv": [
+     0.126953,
+     0.616699,
+     0.250977,
+     0.844238
+    ],
+    "aspect": 0.54506,
+    "px": [
+     254,
+     466
+    ],
+    "cell_m": [
+     0.6,
+     1.1
+    ],
+    "source": "velo procedural (sin motivo)"
+   },
+   "L02": {
+    "uv": [
+     0.0,
+     0.313477,
+     0.258789,
+     0.61377
+    ],
+    "aspect": 0.86179,
+    "px": [
+     530,
+     615
+    ],
+    "cell_m": [
+     1.25,
+     1.45
+    ],
+    "source": "Imaginario ANMI/03_lettering_canciones/TRATRATRA/TRATRATRA-tres-pisos-gotas.png"
+   }
+  }
+ }
+}

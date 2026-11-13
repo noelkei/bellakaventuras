@@ -1,0 +1,18 @@
+# Tabla propia de Bellakaventuras (bk-nft.service la carga al arrancar). Copia en el servidor: /etc/bk/bk.nft
+# No toca el puerto 22 ni las reglas de ufw: solo puede quitar tráfico web (80/443) a IP concretas.
+table inet bk {
+	# Nunca se bloquean: el propio servidor y la IP de casa del usuario (pruebas).
+	set permitidos { type ipv4_addr; elements = { 127.0.0.1, 203.0.113.10, 198.51.100.20 } }
+	# Las rellena bk-guardian, con caducidad (1 h).
+	set bloqueados { type ipv4_addr; flags timeout; }
+	set conexiones { type ipv4_addr; flags dynamic; size 65535; }
+	chain entrada {
+		type filter hook input priority filter - 5; policy accept;
+		ip saddr @permitidos accept
+		tcp dport { 80, 443 } ip saddr @bloqueados drop
+		udp dport 443 ip saddr @bloqueados drop
+		# Más de 1.000 conexiones a la vez desde una IP: un navegador usa 1–6; con CGNAT o la wifi de un colegio caben
+		# cientos de jugadores. Caddy aguanta 1.000 conexiones lentas con ~35 MB más (prueba del 24 oct; antes 400).
+		tcp dport { 80, 443 } ct state new add @conexiones { ip saddr ct count over 1000 } drop
+	}
+}

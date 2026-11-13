@@ -1,0 +1,642 @@
+/* Las fuentes se registran desde main.ts (rutas relativas, válidas en subcarpeta). */
+
+:root {
+  --pink: #F18AAE; --pink-l: #F6BDD0; --fuchsia: #D93D83; --cream: #FFF2DF; --ink: #24212B;
+  --gold: #F4BD48; --violet: #7956C9; --sky: #56AFE3;
+  --sat: env(safe-area-inset-top, 0px); --sar: env(safe-area-inset-right, 0px);
+  --sab: env(safe-area-inset-bottom, 0px); --sal: env(safe-area-inset-left, 0px);
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--ink); color: var(--cream);
+  font-family: 'Bungee', system-ui, sans-serif; touch-action: none; user-select: none; -webkit-user-select: none;
+  overscroll-behavior: none; }
+canvas#game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+#ui { position: fixed; inset: 0; pointer-events: none; }
+#ui section { pointer-events: auto; }
+/* V10.5 (AM-02, AM-03): los dos SALTAR son hijos directos de #ui (que no recibe toques): sin esto no respondían ni al dedo ni al ratón */
+#btn-tuto-skip, #btn-cine-skip { pointer-events: auto; }
+#ui [hidden] { display: none !important; }
+
+button { font-family: inherit; cursor: pointer; border: 0; color: var(--ink); touch-action: manipulation; }
+/* R4 (usuario, 12 oct): sin zoom por doble toque ni pellizco en el móvil (touch-action no se hereda: el HUD y los diálogos lo
+   permitían). Las zonas de juego con `touch-action: none` (#cam-zone, #stick-zone, lienzos) tienen más especificidad. */
+body * { touch-action: manipulation; }
+button.big, a.big { display: inline-block; font-size: clamp(20px, 5vw, 30px); padding: 14px 34px; border-radius: 999px;
+  background: var(--cream); box-shadow: 0 6px 0 var(--fuchsia); text-decoration: none; color: var(--ink); text-align: center; }
+button.big.pink { background: var(--pink); box-shadow: 0 6px 0 var(--ink); }
+button.big:active, a.big:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--fuchsia); }
+button.big:disabled { opacity: .45; }
+button.small { font-size: 1rem; padding: 10px 22px; border-radius: 999px; background: var(--pink); }
+button.ghost { background: transparent; color: var(--cream); border: 2px solid var(--cream); }
+button.link { background: none; color: var(--pink-l); font-size: 0.875rem; text-decoration: underline; }
+button.round { width: 48px; height: 48px; border-radius: 50%; background: rgba(36,33,43,.55); color: var(--cream); font-size: 1.125rem; }
+
+.screen { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 16px; padding: calc(20px + var(--sat)) calc(20px + var(--sar)) calc(20px + var(--sab)) calc(20px + var(--sal)); text-align: center; }
+/* V10.5 (AM-10, AM-21, E5-28): todas las pantallas se desplazan si no caben, en cualquier orientación (antes, solo en horizontal baja: en
+   320×568 el título y «Volver» de Ajustes quedaban cortados y sin teclado no se salía) */
+.screen { overflow-y: auto; justify-content: safe center; touch-action: pan-y; }
+.screen > * { flex-shrink: 0; }
+/* V10.5 ronda PORTADA: el inicio (fondo, marca, botones, barra de carga) vive en src/portada/portada.css */
+.screen.dim { background: rgba(36,33,43,.78); backdrop-filter: blur(4px); }
+.logo { font-family: 'Lucky', sans-serif; font-size: clamp(42px, 11vw, 96px); line-height: .9; color: var(--cream);
+  text-shadow: 4px 4px 0 var(--ink), -2px -2px 0 var(--ink), 2px -2px 0 var(--ink), -2px 2px 0 var(--ink), 0 10px 0 var(--fuchsia); }
+.logo span { color: var(--gold); }
+.logo.small { font-size: clamp(36px, 9vw, 64px); }
+.sub { font-size: 1rem; color: var(--ink); }
+.hint, .tiny { font-family: system-ui, sans-serif; font-size: 0.8125rem; opacity: .9; max-width: 420px; }
+.error { background: #fff; color: #b00; padding: 10px; border-radius: 10px; font-family: system-ui; font-size: 0.8125rem; max-width: 90vw; }
+#load-bar { width: min(320px, 70vw); height: 12px; border-radius: 6px; background: rgba(36,33,43,.35); overflow: hidden; }
+#load-bar i { display: block; height: 100%; width: 0; background: var(--cream); transition: width .2s; }
+#load-text { font-size: 0.8125rem; color: var(--ink); }
+
+/* HUD */
+#hud { position: absolute; inset: 0; pointer-events: none !important; }
+#hud > * { pointer-events: auto; }
+#counter { position: absolute; top: calc(12px + var(--sat)); left: calc(14px + var(--sal)); display: flex; align-items: center; gap: 6px;
+  background: rgba(36,33,43,.6); padding: 6px 16px 6px 10px; border-radius: 999px; font-size: 1.625rem; color: var(--cream); pointer-events: none !important; }
+#counter small { font-size: 1rem; opacity: .8; }
+#counter.bump { animation: bump .45s ease; }
+@keyframes bump { 30% { transform: scale(1.25); } }
+.fry-icon { width: 14px; height: 34px; border-radius: 4px; background: linear-gradient(90deg, #E9A63A, #F4BD48 40%, #FFD98A); transform: rotate(14deg);
+  box-shadow: inset 0 -4px 0 #D5902A, 0 0 0 2px var(--ink); }
+#zone { position: absolute; top: calc(62px + var(--sat)); left: calc(16px + var(--sal)); font-size: 0.875rem; color: var(--cream);
+  text-shadow: 0 2px 0 var(--ink); white-space: nowrap; pointer-events: none !important; }
+#zone small { font-family: system-ui, sans-serif; font-weight: 700; font-size: 0.75rem; opacity: .85; }
+#local { color: var(--gold); margin-left: 4px; }
+#hint { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(160px + var(--sab)); background: rgba(36,33,43,.78); color: var(--cream);
+  font-family: system-ui, sans-serif; font-size: 0.875rem; line-height: 1.35; padding: 10px 16px; border-radius: 14px; max-width: min(520px, 88vw); text-align: center;
+  pointer-events: none !important; transition: opacity .4s; }
+#hint.out { opacity: 0; }
+#hint b { color: var(--pink); }
+#task { position: absolute; top: calc(108px + var(--sat)); left: 50%; transform: translateX(-50%); background: var(--gold); color: var(--ink);
+  font-size: 0.875rem; padding: 8px 14px; border-radius: 12px; box-shadow: 0 4px 0 var(--ink); max-width: 88vw; text-align: center; pointer-events: none !important; }
+#btn-pause { position: absolute; top: calc(10px + var(--sat)); right: calc(12px + var(--sar)); }
+#toast { position: absolute; top: calc(70px + var(--sat)); left: 50%; transform: translateX(-50%); background: var(--cream); color: var(--ink);
+  padding: 10px 18px; border-radius: 14px; font-size: 0.9375rem; box-shadow: 0 4px 0 var(--fuchsia); max-width: 86vw; text-align: center; pointer-events: none !important; }
+#prompt { position: absolute; left: 50%; bottom: calc(150px + var(--sab)); transform: translateX(-50%); }
+#prompt .big { min-height: 48px; }
+/* R5 (IG-005): botón de actividad yendo en skate: visible pero deshabilitado, con el aviso encima */
+#prompt { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+#prompt[hidden] { display: none; }
+#btn-action.off { filter: grayscale(1); opacity: 0.6; cursor: not-allowed; box-shadow: none; }
+#prompt-note { margin: 0; padding: 5px 12px; border-radius: 999px; background: rgba(36, 33, 43, 0.82); color: #fff6ec; font: 600 0.82rem/1.25 system-ui, sans-serif; text-align: center; white-space: nowrap; pointer-events: none; }
+
+/* Capas explícitas (UX-01): táctil < HUD < diálogo < minijuegos < modales < inicio. La zona de cámara nunca tapa botones. */
+#touch { z-index: 1; } #hud { z-index: 2; } #dialog { z-index: 3; } #graffiti, #dance { z-index: 4; }
+body:has(#dance:not([hidden])) #hud, body:has(#graffiti:not([hidden])) #hud { z-index: 5; }   /* V10.1 P06: la pausa se puede tocar en el baile y el grafiti */
+#pause, #settings, #help, #confirm, #final { z-index: 5; } #confirm, #confirm-plaza, #ios-app { z-index: 8; } #start { z-index: 7; }   /* V10.2 Q14: los avisos que se abren desde el inicio («Borrar y empezar», iPhone) van ENCIMA de la pantalla de inicio (antes quedaban debajo y no se podían pulsar) */ #fade { z-index: 9; } #debug { z-index: 10; } #glost { z-index: 11; }
+#ui > section { position: absolute; }
+
+/* Táctil */
+#touch { position: absolute; inset: 0; pointer-events: none !important; }
+#cam-zone { position: absolute; inset: 0; pointer-events: auto; touch-action: none; }
+#stick-zone { position: absolute; left: 0; bottom: 0; width: min(45%, calc(100% - 240px - var(--sar))); height: 70%; pointer-events: auto; touch-action: none; }   /* V5 T5-16: sin solape con AGACHARSE en vertical */
+/* V10.5 (AM-11, E5-23): la zona que recibe el dedo cubre siempre el aro entero (+20 px): en 320 px medía 80 px para un aro de 130 y tocar su centro
+   movía la cámara. Los botones van encima en el DOM: donde la zona pasa por debajo de uno, el toque sigue siendo del botón */
+#stick-zone { min-width: calc(175px + var(--sal) + var(--sar)); }
+#btn-crouch { position: absolute; right: calc(140px + var(--sar)); bottom: calc(26px + var(--sab)); width: 92px; height: 64px; border-radius: 20px;
+  background: var(--cream); color: var(--ink); font-size: 0.6875rem; box-shadow: 0 5px 0 var(--ink); pointer-events: auto; opacity: .92; }
+#btn-crouch.on { background: var(--gold); transform: translateY(3px); box-shadow: 0 2px 0 var(--ink); }
+#btn-crouch.pending { background: #ffcf7a; animation: pulse 0.7s infinite alternate; }
+#btn-extra { position: absolute; right: calc(36px + var(--sar)); bottom: calc(148px + var(--sab)); width: 76px; height: 50px; border-radius: 16px;
+  background: var(--violet); color: var(--cream); font-size: 0.75rem; box-shadow: 0 4px 0 var(--ink); pointer-events: auto; opacity: .9; }
+#btn-extra.on { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); background: #9a7ae6; }
+#touch.no-extra #btn-extra { display: none; }
+#btn-board { position: absolute; right: calc(22px + var(--sar)); bottom: calc(210px + var(--sab)); width: 84px; height: 46px; border-radius: 16px;
+  background: var(--turquoise, #3BB8B0); color: var(--ink); font-size: 0.75rem; box-shadow: 0 4px 0 var(--ink); pointer-events: auto; opacity: .92; }
+#btn-board.on { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+#btn-cam { position: absolute; right: calc(126px + var(--sar)); bottom: calc(110px + var(--sab)); pointer-events: auto; }
+/* R2-G8: botón de bailes y abanico de 8 (las posiciones del abanico las calcula FreeDance para que quepa en pantalla) */
+#btn-dance { position: absolute; right: calc(132px + var(--sar)); bottom: calc(200px + var(--sab)); width: 60px; height: 60px; border-radius: 50%;
+  background: var(--gold, #F5C04A); color: var(--ink); font-size: 1.35rem; line-height: 1; box-shadow: 0 4px 0 var(--ink); pointer-events: auto; opacity: .94;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; }
+#btn-dance[hidden] { display: none; }
+#btn-dance small { font-size: 0.5rem; letter-spacing: .04em; margin-top: 2px; }
+#btn-dance.on { background: var(--fuchsia); color: var(--cream); transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+#dance-ring { position: absolute; inset: 0; pointer-events: none; }
+#dance-ring .dance-opt { position: absolute; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%; pointer-events: auto;
+  background: var(--pink); color: var(--ink); font-size: 1.05rem; font-weight: 800; box-shadow: 0 3px 0 var(--ink); opacity: 0;
+  transform: scale(.4); transition: opacity .16s ease, transform .16s ease; }
+#dance-ring.open .dance-opt.lvl { opacity: .96; transform: scale(1); }
+#dance-ring .dance-opt.on { background: var(--fuchsia); color: var(--cream); }
+/* V10.1 P09: abanico de SKILLS en dos niveles (los botones del nivel que no toca no se ven) */
+#dance-ring .skill-root, #dance-ring .graf-opt { position: absolute; width: 58px; height: 58px; margin: -29px 0 0 -29px; border-radius: 50%; pointer-events: auto; background: var(--gold); color: var(--ink);
+  box-shadow: 0 3px 0 var(--ink); opacity: 0; transform: scale(.4); transition: opacity .16s ease, transform .16s ease; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 800; }
+#dance-ring .graf-opt { background: var(--cream); padding: 4px; } #dance-ring .graf-opt img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+#dance-ring .skill-root small, #dance-ring .dance-opt small { font-size: 0.45rem; letter-spacing: .03em; margin-top: 1px; font-weight: 800; }
+#dance-ring .dance-opt { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+#dance-ring.open > button.lvl { opacity: .97; transform: scale(1); }
+#dance-ring > button:not(.lvl) { visibility: hidden; pointer-events: none; }
+body.reduced #dance-ring > button { transition: none; }
+#stick { position: absolute; width: 130px; height: 130px; margin: -65px 0 0 -65px; border-radius: 50%; border: 3px solid rgba(255,242,223,.7);
+  background: rgba(36,33,43,.25); pointer-events: none; }
+#stick i { position: absolute; left: 50%; top: 50%; width: 58px; height: 58px; margin: -29px 0 0 -29px; border-radius: 50%; background: var(--pink);
+  box-shadow: 0 3px 0 var(--ink); }
+#btn-jump { position: absolute; right: calc(22px + var(--sar)); bottom: calc(34px + var(--sab)); width: 104px; height: 104px; border-radius: 50%;
+  background: var(--pink); color: var(--ink); font-size: 1.125rem; box-shadow: 0 6px 0 var(--ink); pointer-events: auto; opacity: .92; }
+#btn-jump.on { transform: translateY(4px); box-shadow: 0 2px 0 var(--ink); background: var(--fuchsia); color: var(--cream); }
+#btn-jump.hot { animation: pulse 0.7s infinite alternate; }
+@keyframes pulse { to { box-shadow: 0 6px 0 var(--ink), 0 0 0 12px rgba(244,189,72,.55); } }
+@media (hover: hover) and (pointer: fine) { #touch.desktop #stick-zone { display: none; } #touch.desktop #cam-zone { cursor: grab; } }
+#objective { position: absolute; top: calc(102px + var(--sat)); left: calc(16px + var(--sal)); max-width: min(300px, 60vw); font-family: system-ui, sans-serif;
+  font-weight: 700; font-size: 0.75rem; color: var(--cream); background: rgba(36,33,43,.55); padding: 5px 10px; border-radius: 10px; pointer-events: none !important; }
+#save-badge { position: absolute; top: calc(14px + var(--sat)); right: calc(72px + var(--sar)); font-family: system-ui, sans-serif; font-size: 0.75rem; font-weight: 700;
+  background: #ffcf7a; color: var(--ink); padding: 6px 10px; border-radius: 10px; pointer-events: none !important; max-width: 46vw; }
+#btn-sound-fix { position: absolute; top: calc(60px + var(--sat)); right: calc(12px + var(--sar)); background: var(--gold); }
+#mode-chip { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(200px + var(--sab)); font-size: 0.75rem; background: rgba(36,33,43,.6);
+  color: var(--cream); padding: 4px 10px; border-radius: 999px; pointer-events: none !important; }
+/* V10.1 P07: flecha en el borde de la pantalla hacia la patata premio (fuera de cuadro) */
+#reward-arrow { position: absolute; left: 0; top: 0; width: 44px; height: 44px; margin: -22px 0 0 -22px; display: flex; align-items: center; justify-content: center; font-size: 30px;
+  color: var(--gold); text-shadow: 0 0 6px rgba(36,33,43,.9), 0 2px 0 var(--ink); pointer-events: none !important; }
+/* V10.1 P05 (usuario: «que el tamaño de los botones se pueda cambiar»): un único factor (--btn-k, 0,5–2) con `scale` desde la esquina en la
+   que se ancla cada botón (no se tocan las posiciones de cada orientación). Al editarlo, los ajustes dejan ver el HUD real encima de un
+   fondo liso del color de los ajustes (body.edit-btns) */
+:root { --btn-k: 1; }
+#touch > button, #btn-pause, #prompt .big { scale: var(--btn-k); }   /* R5: hudlayout puede fijar un factor menor por botón si no cabe */
+#btn-jump, #btn-crouch, #btn-board, #btn-cam, #btn-dance, #btn-lean-r { transform-origin: 100% 100%; }
+#btn-lean-l { transform-origin: 0 100%; } #btn-pause { transform-origin: 100% 0; } #prompt .big { transform-origin: 50% 100%; }
+body.edit-btns #settings { background: #2c2734; backdrop-filter: none; }
+body.edit-btns #settings > * { visibility: hidden; }
+/* V10.2 Q10: la vista de tamaño de botones deja ver el HUD; solo su barra de arriba recibe toques */
+#btn-size { position: fixed; inset: 0; z-index: 8; pointer-events: none; }
+#btn-size .bs-bar { pointer-events: auto; position: absolute; left: 50%; top: calc(8px + var(--sat)); transform: translateX(-50%); display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
+  gap: 4px 12px; background: rgba(36,33,43,.94); color: var(--cream); padding: 6px 12px; border-radius: 14px; width: max-content; max-width: calc(100% - 24px); box-shadow: 0 4px 0 var(--ink); }
+#btn-size-title { width: 100%; text-align: center; font-size: .78rem; letter-spacing: .03em; }
+#btn-size .bs-row { display: flex; align-items: center; gap: 6px; }
+#btn-size input[type=range] { width: 170px; }   /* sin vw: con la pantalla girada (orient.ts) vw no es el ancho lógico */
+#btn-size .small { padding: 6px 12px; font-size: .85rem; min-height: 40px; }
+#btn-size-minus, #btn-size-plus { min-width: 40px; font-size: 1.1rem !important; }
+#btn-size #opt-btn-warn { width: 100%; text-align: center; margin: 0; }
+#opt-btn-now { margin-left: 6px; }
+body.edit-btns #touch { z-index: 7 !important; visibility: visible !important; display: block !important; }
+body.edit-btns #touch > button:not(.lean):not(#btn-dance) { display: block !important; } body.edit-btns #btn-dance { display: flex !important; }
+body.edit-btns #hud { z-index: 7; } body.edit-btns #btn-pause { visibility: visible; }
+#opt-btn-warn { color: #ffcf7a; margin: 4px 0 0; }
+/* V10.1 P10 (usuario: «en ordenador no puedes clicar botones al usar el ratón, meter letras en botones»): cada botón dice su tecla en
+   ordenador (su botón del mando si se juega con mando); en táctil, nada */
+body:not(.touch) button[data-key]::after, body.pad:not(.touch) button[data-pad]::after { content: attr(data-key); position: absolute; left: 50%; bottom: -9px; transform: translateX(-50%); font: 700 10px/1 system-ui, sans-serif;
+  padding: 2px 5px; border-radius: 5px; background: rgba(36,33,43,.86); color: #fff6ec; white-space: nowrap; pointer-events: none; letter-spacing: 0; }
+body.pad:not(.touch) button[data-pad]::after { content: attr(data-pad); }
+/* V10.2 Q11: en el abanico de SKILLS la tecla va DENTRO del círculo, arriba a la derecha (por debajo pisaba al vecino) */
+body:not(.touch) #dance-ring button[data-key]::after, body.pad:not(.touch) #dance-ring button[data-pad]::after { left: auto; right: 0; top: 0; bottom: auto; transform: none; padding: 2px 4px; font-size: 9px; }
+#btn-action kbd { font-family: system-ui, sans-serif; font-size: 0.75rem; margin-left: 10px; padding: 1px 6px; border-radius: 6px; background: rgba(36,33,43,.18); vertical-align: middle; }
+#touch:not(.desktop) ~ #hud #btn-action kbd, body.touch #btn-action kbd { display: none; }
+#task small { display: block; font-family: system-ui, sans-serif; font-size: 0.75rem; margin-top: 2px; }
+
+/* Diálogo */
+#dialog { position: absolute; left: 50%; transform: translateX(-50%); top: calc(64px + var(--sat)); width: min(560px, 94vw);
+  display: flex; align-items: flex-start; gap: 8px; }
+#dialog .bubble { background: var(--cream); color: var(--ink); border-radius: 4px 18px 18px 18px; padding: 12px 16px; box-shadow: 0 5px 0 var(--fuchsia); flex: 1; }
+#dialog .bubble b { font-size: 0.8125rem; color: var(--fuchsia); }
+#dialog .bubble p { margin: 4px 0 8px; font-family: system-ui, sans-serif; font-weight: 700; font-size: 1rem; line-height: 1.3; }
+
+/* Minijuegos */
+.overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  background: rgba(36,33,43,.82); padding: calc(10px + var(--sat)) calc(10px + var(--sar)) calc(10px + var(--sab)) calc(10px + var(--sal)); }
+.overlay.clear { background: linear-gradient(to top, rgba(36,33,43,.7), rgba(36,33,43,0) 40%), linear-gradient(to bottom, rgba(36,33,43,.55), rgba(36,33,43,0) 30%);
+  justify-content: flex-start; padding-top: calc(64px + var(--sat)); }
+#dance-pad { margin-top: auto; }
+@media (orientation: landscape) and (max-height: 520px) {
+  #dance-pad { width: min(560px, 70vw); }
+  #dance-pad button { height: 64px; font-size: 1.875rem; }
+  #dance-seq span { width: 48px; height: 48px; font-size: 1.625rem; }
+  .mg-title { font-size: 1.125rem; }
+}
+.mg-title { font-size: 1.375rem; text-shadow: 0 3px 0 var(--fuchsia); }
+.mg-hint { font-family: system-ui; font-size: 0.875rem; opacity: .85; }
+#graffiti-wrap { position: relative; width: min(96vw, calc((100vh - 200px) * 0.8727)); aspect-ratio: 0.8727; border-radius: 12px; overflow: hidden;
+  box-shadow: 0 0 0 4px var(--pink), 0 10px 30px rgba(0,0,0,.5); touch-action: none; }
+#graffiti-canvas { width: 100%; height: 100%; display: block; touch-action: none; cursor: crosshair; }
+#graffiti-exit { position: absolute; top: calc(12px + var(--sat)); left: calc(12px + var(--sal)); }
+#dance-seq { display: flex; gap: 12px; flex-wrap: nowrap; }
+/* V6 (D6-01): cuenta atrás por stage. Barra + cifra (legible sin depender del color ni de la animación) */
+#dance-timer { position: relative; width: min(340px, 78vw); height: 26px; border-radius: 13px; background: rgba(36,33,43,.72); overflow: hidden; box-shadow: 0 0 0 3px var(--cream); }
+#dance-timer i { position: absolute; inset: 0 auto 0 0; width: 100%; background: var(--gold); transform-origin: left; }
+#dance-timer.low i { background: #ff5a6a; }
+#dance-timer span { position: relative; display: block; text-align: center; font: 700 1rem/26px system-ui; color: var(--ink); text-shadow: 0 0 4px var(--cream); }
+#dance-timer.frozen i { background: var(--pink); }
+#dance-seq span { width: min(64px, 15vw); height: min(64px, 15vw); border-radius: 16px; display: grid; place-items: center; font-size: 2.125rem; background: var(--cream);
+  color: var(--ink); box-shadow: 0 5px 0 var(--violet); transition: transform .15s; }
+#dance-seq span.ok { background: var(--gold); transform: scale(1.1); }
+#dance-seq span.bad { background: #ff5a6a; }
+#dance-msg { min-height: 28px; font-size: 1.25rem; text-shadow: 0 3px 0 var(--fuchsia); }
+#dance-pad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; width: min(520px, 96vw); margin-bottom: calc(16px + var(--sab)); }
+#dance-pad button { height: 86px; border-radius: 22px; font-size: 2.375rem; background: var(--pink); box-shadow: 0 6px 0 var(--ink); }
+#dance-pad button:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--ink); }
+#dance-pad button:disabled { opacity: .4; }
+
+#pause h2 { font-size: 2.125rem; margin: 0; }
+#pause label { font-family: system-ui; font-size: 1rem; display: flex; gap: 10px; align-items: center; }
+#final .logo span { color: var(--gold); }
+#final-note { font-family: system-ui; font-size: 0.875rem; max-width: 460px; }
+
+#fade { position: absolute; inset: 0; background: var(--ink); opacity: 0; transition: opacity .35s; pointer-events: none !important; }
+#fade.on { opacity: 1; }
+#fade .label { position: absolute; inset: 0; display: grid; place-items: center; font-size: 1.75rem; color: var(--pink); }
+#debug { position: absolute; right: calc(8px + var(--sar)); top: calc(66px + var(--sat)); background: rgba(0,0,0,.65); color: #9f9; font: 11px/1.35 monospace;
+  padding: 6px 8px; border-radius: 6px; max-width: 46vw; white-space: pre; pointer-events: auto; }
+#debug button { font: 11px monospace; margin: 2px; padding: 2px 6px; background: #333; color: #fff; border-radius: 4px; }
+
+#dance-exit { position: absolute; top: calc(12px + var(--sat)); left: calc(12px + var(--sal)); }
+#final { overflow-y: auto; }
+#visual-slot { position: relative; flex: none; width: min(560px, 88vw, calc((100dvh - 380px) * 16 / 9)); min-width: 240px; aspect-ratio: 16 / 9; border-radius: 14px; overflow: hidden; box-shadow: 0 0 0 3px var(--pink); }
+#visual-canvas { width: 100%; height: 100%; display: block; }
+#visual-label { position: absolute; left: 8px; bottom: 6px; font-family: system-ui, sans-serif; font-size: 0.6875rem; color: var(--cream); opacity: .85; }
+#final .row { display: flex; gap: 10px; }
+@media (orientation: landscape) and (max-height: 520px) {
+  #final { gap: 6px; padding-top: calc(8px + var(--sat)); } #final .logo.small { font-size: 1.75rem; } #visual-slot { width: min(46vw, calc((100vh - 235px) * 16 / 9)); }   /* IT3 (QA-7): en 844×390 «Volver al parque» quedaba bajo el borde */
+  #btn-jump { width: 84px; height: 84px; bottom: calc(18px + var(--sab)); } #btn-crouch { right: calc(116px + var(--sar)); bottom: calc(14px + var(--sab)); width: 82px; height: 52px; }
+  #btn-extra { bottom: calc(112px + var(--sab)); right: calc(24px + var(--sar)); height: 44px; }
+  #btn-board { bottom: calc(162px + var(--sab)); right: calc(24px + var(--sar)); height: 44px; }   /* V4 UX-03: ≥ 44 px táctil (era 40) */
+  #btn-cam { right: calc(206px + var(--sar)); bottom: calc(18px + var(--sab)); }
+  #hint { bottom: auto; top: calc(56px + var(--sat)); max-width: min(420px, 50vw); }
+  #prompt { bottom: calc(96px + var(--sab)); } #prompt .big { font-size: 1.125rem; padding: 10px 24px; }
+  #objective { top: calc(102px + var(--sat)); }   /* V5 T5-23: bajo las DOS líneas de #zone (nombre + ♪ canción); a 80 px se montaba con la canción */
+  .screen { gap: 8px; overflow-y: auto; justify-content: flex-start; } #pause h2, #settings h2, #help h2 { font-size: 1.5rem; }
+}
+/* Ajustes / ayuda / modales */
+.row.wrap { flex-wrap: wrap; justify-content: center; }
+.opts { display: flex; flex-direction: column; gap: 10px; text-align: left; max-width: 520px; }
+.opts label { font-family: system-ui, sans-serif; font-size: 0.9375rem; display: flex; gap: 10px; align-items: center; }
+.opts input[type=checkbox] { width: 22px; height: 22px; }
+.help { font-family: system-ui, sans-serif; font-size: 0.875rem; text-align: left; max-width: 640px; width: 100%; overflow-y: auto; max-height: 60vh; }
+.help table { width: 100%; border-collapse: collapse; } .help td, .help th { padding: 4px 6px; border-bottom: 1px solid rgba(255,242,223,.15); vertical-align: top; }
+.help th { text-align: left; color: var(--pink); font-weight: 800; }
+:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+body.reduced #counter.bump { animation: none; }
+/* V10: con movimiento reducido el salto «a punto» no late en bucle; queda marcado con un aro fijo */
+body.reduced #btn-jump.hot, body.reduced #btn-crouch.pending { animation: none; }
+body.reduced #btn-jump.hot { box-shadow: 0 6px 0 var(--ink), 0 0 0 8px rgba(244,189,72,.55); }
+#final-status { min-height: 18px; }
+/* V3 (UX-01): en vertical ACCIÓN sube por encima del grupo derecho (◎ y EXTRA la tapaban en 390/360 px de ancho) */
+@media (orientation: portrait) { #prompt { bottom: calc(214px + var(--sab)); } #mode-chip { bottom: calc(268px + var(--sab)); } }
+/* V3 (UX-01/03): con el baile o el grafiti abiertos, «Salir» va arriba a la izquierda (la pausa sigue arriba a la derecha) y
+   los rótulos del HUD de esa esquina se ocultan para no montarse con el título de la ronda */
+body:has(#dance:not([hidden])) :is(#zone, #objective, #counter, #task, #mode-chip, #hint),
+body:has(#graffiti:not([hidden])) :is(#zone, #objective, #counter, #task, #mode-chip, #hint) { visibility: hidden; }
+
+/* V5 T5-18: botón de orientación de la pausa · V10.5 (AM-01, AM-16): ya no va en la esquina de II, sino en la fila de botones */
+/* V5 T5-18: rotación de RESPALDO del contenedor (si el navegador no fija la orientación). Ancho/alto lógicos intercambiados,
+   safe-areas remapeadas y reglas de la disposición lógica (no la física). */
+html.rot90 canvas#game, html.rot90 #ui { position: fixed; inset: auto; top: 0; left: 0; width: 100vh; height: 100vw; transform-origin: top left; transform: rotate(90deg) translateY(-100%); }
+html.rotm90 canvas#game, html.rotm90 #ui { position: fixed; inset: auto; top: 0; left: 0; width: 100vh; height: 100vw; transform-origin: top left; transform: rotate(-90deg) translateX(-100%); }
+html.rot90 { --sat: env(safe-area-inset-right, 0px); --sar: env(safe-area-inset-bottom, 0px); --sab: env(safe-area-inset-left, 0px); --sal: env(safe-area-inset-top, 0px); }
+html.rotm90 { --sat: env(safe-area-inset-left, 0px); --sar: env(safe-area-inset-top, 0px); --sab: env(safe-area-inset-right, 0px); --sal: env(safe-area-inset-bottom, 0px); }
+/* físicamente vertical, lógica horizontal: reglas de la horizontal baja */
+html.rot90 #btn-jump { width: 84px; height: 84px; bottom: calc(18px + var(--sab)); } html.rot90 #btn-crouch { right: calc(116px + var(--sar)); bottom: calc(14px + var(--sab)); width: 82px; height: 52px; }
+html.rot90 #btn-extra { bottom: calc(112px + var(--sab)); right: calc(24px + var(--sar)); height: 44px; }
+html.rot90 #btn-board { bottom: calc(162px + var(--sab)); right: calc(24px + var(--sar)); height: 44px; }
+html.rot90 #btn-cam { right: calc(206px + var(--sar)); bottom: calc(18px + var(--sab)); }
+html.rot90 #hint { bottom: auto; top: calc(56px + var(--sat)); max-width: 50vh; }
+html.rot90 #prompt { bottom: calc(96px + var(--sab)); } html.rot90 #mode-chip { bottom: calc(200px + var(--sab)); }
+html.rot90 #objective { top: calc(102px + var(--sat)); }
+html.rot90 #stick-zone { width: 45%; }
+/* físicamente horizontal, lógica vertical: se deshacen las reglas de la horizontal baja y se aplican las de vertical */
+html.rotm90 #btn-jump { width: 104px; height: 104px; bottom: calc(34px + var(--sab)); } html.rotm90 #btn-crouch { right: calc(140px + var(--sar)); bottom: calc(26px + var(--sab)); width: 92px; height: 64px; }
+html.rotm90 #btn-extra { bottom: calc(148px + var(--sab)); right: calc(36px + var(--sar)); height: 50px; }
+html.rotm90 #btn-board { bottom: calc(210px + var(--sab)); right: calc(22px + var(--sar)); height: 46px; }
+html.rotm90 #btn-cam { right: calc(126px + var(--sar)); bottom: calc(110px + var(--sab)); }
+html.rotm90 #hint { top: auto; bottom: calc(160px + var(--sab)); }
+html.rotm90 #prompt { bottom: calc(214px + var(--sab)); } html.rotm90 #mode-chip { bottom: calc(268px + var(--sab)); }
+html.rotm90 #objective { top: calc(98px + var(--sat)); }
+html.rotm90 #stick-zone { width: calc(100vh - 240px - var(--sar)); max-width: 45%; }
+
+/* V5 T5-23 (OPUS-011/012, SOL-008): chip reducido a icono en la esquina superior; avisos en una franja superior que no pisa
+   botones en ningún layout; sin avisos durante el vuelo/caída del impacto; diálogo abajo a la izquierda en horizontal baja
+   (el cuadro de charla deja libres las caras) */
+#mode-chip.mini { top: calc(12px + var(--sat)); bottom: auto; left: auto; right: calc(70px + var(--sar)); transform: none; font-size: 1.1rem; padding: 4px 8px; }
+#hint.impact { visibility: hidden; }
+@media (orientation: portrait) { #hint { bottom: auto; top: calc(150px + var(--sat)); max-width: 88vw; } }
+html.rotm90 #hint { bottom: auto; top: calc(150px + var(--sat)); max-width: 88vh; }
+@media (orientation: landscape) and (max-height: 520px) {
+  #dialog { left: calc(10px + var(--sal)); right: auto; top: auto; bottom: calc(8px + var(--sab)); width: min(52vw, 520px); transform: none; }
+  #dialog .bubble { max-width: none; }
+}
+html.rot90 #dialog { left: calc(10px + var(--sal)); right: auto; top: auto; bottom: calc(8px + var(--sab)); width: min(52vh, 520px); transform: none; }
+
+/* V5 T5-23 (SOL-008): sin texto sobre texto. #zone empieza bajo el contador (que ocupa hasta y≈59) y #objective bajo las dos
+   líneas de #zone; con el botón de acción visible el aviso sube por encima de él (disposición por defecto); con un diálogo
+   abierto se ocultan los rótulos de zona, objetivo, tarea y aviso (el diálogo manda, como en el baile y el grafiti). */
+body:has(#prompt:not([hidden])) #hint { bottom: calc(222px + var(--sab)); }
+@media (orientation: landscape) and (max-height: 520px) { body:has(#prompt:not([hidden])) #hint { bottom: auto; } }
+@media (orientation: portrait) { body:has(#prompt:not([hidden])) #hint { bottom: auto; } }
+html.rot90 body:has(#prompt:not([hidden])) #hint, html.rotm90 body:has(#prompt:not([hidden])) #hint { bottom: auto; }
+body:has(#dialog:not([hidden])) :is(#zone, #objective, #task, #hint) { visibility: hidden; }
+/* V5 T5-23: con left:50% un absoluto se ajusta al contenido con solo MEDIA pantalla de ancho → el aviso largo salía de 195 px
+   y 7 líneas en vertical (tapaba a ANMI). Ancho del contenido hasta su max-width. */
+#hint, #toast { width: max-content; }
+
+/* V6 (FG): baile en apaisado bajo. Al final del archivo para prevalecer sobre las reglas base del baile */
+@media (orientation: landscape) and (max-height: 520px) {
+  #dance-timer { height: 22px; width: min(260px, 40vw); } #dance-timer span { line-height: 22px; }
+  /* V6: en apaisado la cabecera se compacta y la cruceta pasa abajo a la derecha (no tapa a ANMI ni a las chicas) */
+  #dance.overlay.clear { padding-top: calc(8px + var(--sat)); gap: 4px; }
+  #dance .mg-title { font-size: 1rem; }
+  #dance-seq span { width: 40px; height: 40px; font-size: 1.3rem; border-radius: 12px; }
+  #dance-msg { font-size: .95rem; min-height: 20px; }
+  #dance-pad { position: absolute; right: calc(14px + var(--sar)); bottom: calc(10px + var(--sab)); width: auto; margin: 0;
+    grid-template-columns: repeat(3, 58px); grid-template-areas: ". u ." "l . r" ". d ."; gap: 6px; }
+  #dance-pad button { height: 58px; font-size: 1.6rem; border-radius: 16px; }
+  #dance-pad [data-k=up] { grid-area: u; } #dance-pad [data-k=left] { grid-area: l; } #dance-pad [data-k=right] { grid-area: r; } #dance-pad [data-k=down] { grid-area: d; }
+}
+
+/* V8 YINYANG: medidor de «cuánto te has salido» y aviso de fallo (el intento se borra) */
+#graffiti-err { display: inline-block; width: 90px; height: 10px; border-radius: 6px; background: rgba(255,255,255,.25); vertical-align: middle; overflow: hidden; margin-left: 8px; }
+#graffiti-err i { display: block; height: 100%; width: var(--err, 0%); background: #f6c35a; transition: width .12s; }
+#graffiti-err.warn i { background: #ff5a7a; }
+#graffiti-msg { font-size: 14px; text-align: center; max-width: 92vw; margin: 4px auto 6px; min-height: 1.3em; color: #fff4e6; }
+#graffiti.failed #graffiti-wrap { outline: 4px solid #ff5a7a; }
+/* R11 (YY-16): mientras se ve una pista, el chip de modo se aparta (la pista de varias líneas quedaba debajo) */
+body:has(#hint:not([hidden]):not(.out)) #mode-chip { visibility: hidden; }
+
+/* V10: botones del equilibrio del grind de RG1 (NOSVAMOSDEAQUÍ). Solo en táctil y durante el grind (body.grind): grandes, en las dos
+   esquinas inferiores; mientras tanto se ocultan SALTO, EXTRA, TABLA y BAILAR (el grind es automático) y AGACHARSE sube al centro. */
+#touch .lean { display: none; position: absolute; bottom: calc(28px + var(--sab)); width: 104px; height: 104px; border-radius: 26px; font-size: 40px; font-weight: 800;
+  background: rgba(255, 242, 223, 0.92); color: var(--ink); border: 3px solid var(--ink); box-shadow: 0 5px 0 var(--ink); touch-action: none; }
+#touch .lean.on { background: var(--gold); transform: translateY(3px); box-shadow: 0 2px 0 var(--ink); }
+#btn-lean-l { left: calc(22px + var(--sal, 0px)); }
+#btn-lean-r { right: calc(22px + var(--sar)); }
+body.grind.touch #touch .lean { display: block; }
+/* V10 IT2: la zona del joystick (abajo a la izquierda) quedaba encima de ◀ y se quedaba el dedo; en el grind no se usa (es automático) */
+body.grind #stick-zone { pointer-events: none; }
+#touch .lean { z-index: 6; pointer-events: auto; }   /* #touch tiene pointer-events: none !important; cada botón lo reactiva */
+body.grind #btn-jump, body.grind #btn-extra, body.grind #btn-board, body.grind #btn-dance { display: none; }
+/* V10.1 P16 (usuario): AGACHARSE se queda en su sitio de siempre; en la horizontal baja ◀ ▶ se encogen y se apartan lo justo para no tocarlo */
+@media (max-height: 520px) { body.grind #touch .lean { width: 92px; height: 92px; bottom: calc(14px + var(--sab)); } body.grind #btn-lean-r { right: calc(12px + var(--sar)); } body.grind #btn-lean-l { left: calc(12px + var(--sal, 0px)); } }
+html.rot90 body.grind #touch .lean { width: 92px; height: 92px; bottom: calc(14px + var(--sab)); } html.rot90 body.grind #btn-lean-r { right: calc(12px + var(--sar)); }
+
+/* V10 IT3: modo actividad (feedback: «al entrar en la actividad los bordes de la pantalla se oscurecen un poco», «marcador de cuánto circuito
+   queda», «barra tipo stop the meter que marque el desequilibrio y vaya a izquierda y derecha»). Arriba y compacto: ANMI va centrada. */
+#act-vignette { position: absolute; inset: 0; z-index: 0; pointer-events: none !important; opacity: 0; transition: opacity .45s;
+  background: radial-gradient(ellipse at center, rgba(18, 8, 28, 0) 45%, rgba(18, 8, 28, .72) 100%); }
+body.actividad #act-vignette { opacity: 1; }
+body.reduced #act-vignette { transition: none; }
+#grind-hud { position: absolute; top: calc(10px + var(--sat)); left: 50%; transform: translateX(-50%); width: min(400px, 60vw); pointer-events: none !important;
+  background: rgba(36, 33, 43, .74); border-radius: 16px; padding: 7px 12px 8px; color: var(--cream); font-family: system-ui, sans-serif;
+  box-shadow: 0 4px 0 var(--fuchsia); }
+/* V10.6.1: cronómetro de speedrun arriba en el centro (hueco libre entre el contador y la pausa); con el panel del grind, debajo de él.
+   Dentro del HUD: se oculta solo en las cinemáticas y en la escena final, como el resto. Rótulo del tiempo final en el centro */
+#crono { position: absolute; top: calc(12px + var(--sat)); left: 50%; transform: translateX(-50%); pointer-events: none !important;
+  background: rgba(36,33,43,.6); color: var(--cream); padding: 4px 12px; border-radius: 999px; white-space: nowrap;
+  font-family: system-ui, sans-serif; font-weight: 800; font-size: 1rem; font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+#crono.fin { background: var(--pink); color: var(--ink); box-shadow: 0 3px 0 var(--ink); }
+#crono[data-rec]::after { content: attr(data-rec); display: block; text-align: center; font-size: .625rem; font-weight: 700; opacity: .8; letter-spacing: .03em; }   /* récord de todos, debajo */
+body:has(#grind-hud:not([hidden])) #crono { top: calc(106px + var(--sat)); }
+/* baile y grafiti: su cabecera va arriba en el centro; el cronómetro pasa al sitio del chip de modo (oculto en ellos), junto a la pausa */
+body:has(#dance:not([hidden])) #crono, body:has(#graffiti:not([hidden])) #crono { left: auto; right: calc(70px + var(--sar)); transform: none; }
+@media (max-width: 360px) { #crono { font-size: .875rem; padding: 3px 9px; }   /* SE: no llega al chip de modo ni con horas */
+  body:has(#graffiti:not([hidden])) #crono { top: calc(6px + var(--sat)); } }   /* y no roza el título del grafiti */
+#crono-fin { z-index: 4;   /* ventana encima del HUD y de los avisos (es lo que se captura), debajo de la pausa */
+  position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%); text-align: center;
+  background: var(--cream); color: var(--ink); border-radius: 18px; padding: 12px 26px 14px; box-shadow: 0 6px 0 var(--fuchsia); transition: opacity .6s; }
+#crono-fin #btn-crono-ok { margin-top: 10px; min-width: 180px; }
+#crono-fin small { display: block; font-size: .875rem; letter-spacing: .06em; color: var(--fuchsia); }
+#crono-fin b { display: block; font-family: system-ui, sans-serif; font-weight: 900; font-size: 2.6rem; font-variant-numeric: tabular-nums; line-height: 1.1; }
+#crono-fin i { display: block; font-family: system-ui, sans-serif; font-style: normal; font-weight: 700; font-size: .75rem; opacity: .7; }
+#crono-fin em { display: block; max-width: min(320px, 80vw); margin: 4px auto 2px; font-family: system-ui, sans-serif; font-style: normal; font-weight: 800; font-size: .875rem; }
+#crono-fin i:empty { display: none; }
+#crono-fin.record { background: var(--gold); box-shadow: 0 6px 0 var(--fuchsia), 0 0 0 4px var(--pink); }
+#crono-fin ol { list-style: none; margin: 6px auto 2px; padding: 0; font-family: system-ui, sans-serif; font-weight: 700; font-size: .8125rem;
+  font-variant-numeric: tabular-nums; line-height: 1.45; max-width: min(320px, 80vw); overflow-wrap: anywhere; }
+#crono-fin ol:empty { display: none; }
+#crono-fin li.cab { font-size: .6875rem; letter-spacing: .08em; color: var(--fuchsia); }
+#crono-fin li.tu { color: var(--cream); background: var(--fuchsia); border-radius: 8px; padding: 0 8px; margin: 1px auto; width: max-content; font-weight: 900; }   /* tu tiempo, en otro color */
+#grind-hud .gh-row { display: flex; justify-content: space-between; align-items: baseline; font-size: .78rem; font-weight: 800; letter-spacing: .04em; }
+#grind-hud .gh-title { color: var(--pink); }
+#grind-hud .gh-prog { height: 7px; border-radius: 4px; background: rgba(255, 242, 223, .2); margin: 5px 0 7px; overflow: hidden; }
+#gh-prog-fill { display: block; height: 100%; width: 0; background: var(--pink); }
+#grind-hud .gh-bal { position: relative; height: 18px; border-radius: 9px; border: 2px solid var(--ink);
+  background: linear-gradient(90deg, #e2455a 0%, #f2b84b 20%, #74d39d 38%, #74d39d 62%, #f2b84b 80%, #e2455a 100%); }
+#gh-needle { position: absolute; top: -6px; bottom: -6px; left: 50%; width: 7px; margin-left: -3.5px; background: var(--cream); border: 2px solid var(--ink); border-radius: 4px; }
+#gh-needle.danger { background: #ff5a6e; }
+#grind-hud .gh-l, #grind-hud .gh-r { position: absolute; top: 50%; transform: translateY(-50%); font-size: .62rem; font-weight: 900; color: var(--ink); }
+#grind-hud .gh-l { left: 5px; } #grind-hud .gh-r { right: 5px; }
+#gh-msg { margin-top: 6px; font-size: .84rem; line-height: 1.25; text-align: center; min-height: 1.05em; }
+#gh-msg.warn { color: #ffd166; font-weight: 800; }
+/* durante la actividad, fuera tarjeta, pista y objetivo (en el teléfono horizontal tapaban a ANMI y se montaban: QA-1, QA-6) */
+body.actividad #task, body.actividad #hint, body.actividad #objective { display: none !important; }
+@media (max-height: 520px) { #grind-hud { width: min(360px, 46vw); padding: 5px 10px 6px; } #grind-hud .gh-row { font-size: .68rem; }
+  #grind-hud .gh-prog { margin: 3px 0 5px; } #gh-msg { font-size: .72rem; margin-top: 4px; } }
+
+/* V10 IT3: franjas de cine durante el salto de SECRETNOVIO (body.cine; nunca con «reducir movimiento») */
+body::before, body::after { content: ''; position: fixed; left: 0; right: 0; height: 0; background: #000; z-index: 3; pointer-events: none; transition: height .35s ease; }
+body::before { top: 0; } body::after { bottom: 0; }
+body.cine::before, body.cine::after { height: 11vh; }
+body.cine #hud > *:not(#btn-pause), body.cine #touch > * { opacity: 0; transition: opacity .25s; }
+/* V10.1 escena final: sin HUD (tampoco la pausa: se salta con SALTAR / Esc / B), franjas de cine, SALTAR abajo a la derecha y fundido */
+body.finale #hud > *, body.finale #touch, body.finale #prompt, body.finale #toast, body.finale #hint { opacity: 0 !important; pointer-events: none !important; }
+#btn-cine-skip { position: fixed; right: max(16px, env(safe-area-inset-right)); bottom: calc(11vh + 12px); z-index: 6; opacity: .8; }
+body.finale-reducido::before, body.finale-reducido::after { height: 11vh; }
+#cine-fade { position: fixed; inset: 0; background: #000; opacity: 0; pointer-events: none; z-index: 7; transition: opacity .3s ease; }
+#cine-fade.on { opacity: 1; }
+body.puntero-libre #cam-zone { cursor: pointer; }   /* IT3: en el grind el ratón queda libre (clic izq./der. = equilibrio) */
+
+/* V10.1 P04 (usuario: «Hit Circle: el botón central que debes pulsar · Approach Circle: el anillo exterior que se va haciendo pequeño hasta
+   coincidir con el botón»): a la derecha del centro (ANMI queda libre), núcleo de 112 px y anillo que se cierra; con «reducir movimiento», barra */
+#hit-circle { position: absolute; left: 70%; top: 48%; width: 0; height: 0; z-index: 4; pointer-events: none; }
+#hit-circle .hc-core { position: absolute; left: -56px; top: -56px; width: 112px; height: 112px; border-radius: 50%; pointer-events: auto; background: var(--pink);
+  color: var(--ink); border: 4px solid var(--cream); box-shadow: 0 6px 0 var(--ink), 0 0 24px rgba(241,138,174,.8); display: flex; flex-direction: column; align-items: center; justify-content: center; touch-action: none; }
+#hit-circle .hc-name { font-family: 'Bungee', sans-serif; font-size: 15px; line-height: 1; }
+#hit-circle .hc-key { font: 700 11px system-ui, sans-serif; margin-top: 4px; opacity: .8; }
+body.touch #hit-circle .hc-key { display: none; }
+#hit-circle .hc-ring { position: absolute; left: -56px; top: -56px; width: 112px; height: 112px; border-radius: 50%; border: 6px solid var(--gold); box-sizing: border-box; transform: scale(var(--hc, 2.2)); }
+#hit-circle.good .hc-ring { border-color: #74d39d; } #hit-circle.hit .hc-core { background: #74d39d; } #hit-circle.miss .hc-core { background: #ff7a8a; }
+#hit-circle .hc-bar { display: none; position: absolute; left: -60px; top: 66px; width: 120px; height: 10px; border-radius: 5px; background: rgba(255,242,223,.3); overflow: hidden; }
+#hit-circle .hc-bar i { display: block; height: 100%; width: var(--hcp, 0%); background: var(--gold); }
+#hit-circle .hc-msg { position: absolute; left: -110px; top: -100px; width: 220px; text-align: center; font: 800 15px system-ui, sans-serif; color: var(--cream); text-shadow: 0 2px 0 var(--ink); }
+body.reduced #hit-circle .hc-ring { display: none; } body.reduced #hit-circle .hc-bar { display: block; }
+@media (orientation: portrait) { #hit-circle { left: 50%; top: 66%; } }
+/* V10 IT3: reto de SECRETNOVIO: fuera el chip de modo y los botones que no sirven en la bajada (solo SALTO) */
+body.reto-sn #mode-chip, body.reto-sn #btn-crouch, body.reto-sn #btn-extra, body.reto-sn #btn-board, body.reto-sn #btn-dance { display: none !important; }
+/* V10 IT3 (suite R11 f11-hud): con un botón de acción visible (HABLAR, ¡BAJAR!…; 68 px con su tecla) el chip COMPLETO de modo
+   («A pie · Q para subir a la tabla», 2,5 s tras cambiar de modo) se coloca por encima del botón en vez de taparlo */
+body:has(#prompt:not([hidden])) #mode-chip:not(.mini) { bottom: calc(228px + var(--sab)); }
+@media (orientation: portrait) { body:has(#prompt:not([hidden])) #mode-chip:not(.mini) { bottom: calc(292px + var(--sab)); } }
+html.rotm90 body:has(#prompt:not([hidden])) #mode-chip:not(.mini) { bottom: calc(292px + var(--sab)); }
+html.rot90 body:has(#prompt:not([hidden])) #mode-chip:not(.mini) { bottom: calc(200px + var(--sab)); }
+/* V10.4 · capa de diálogo 2D (W-D12: máscara como la pausa —misma opacidad .78 y desenfoque 4 px— pero más oscura; dossier 03/04 §7) */
+/* V10.5 (AM-30, E5-31): por DEBAJO de los modales (pausa 5, avisos 8, «Se ha perdido la imagen» 11) y por encima del HUD y los minijuegos (4, va
+   después en el DOM); antes, con 30, la pausa y el aviso de la imagen se abrían debajo y no se podían tocar */
+#d2 { position: absolute; inset: 0; z-index: 4; pointer-events: auto; opacity: 0; transition: opacity .18s ease; }
+#d2.in { opacity: 1; }
+body.reduced #d2 { transition: none; }
+#d2 .d2-mask { position: absolute; inset: 0; background: rgba(14,12,18,.78); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+/* V10.5 (AM-04, AM-09, AM-15; E5-13…E5-15): el 2D se coloca con su CONTENEDOR (#d2 es un contenedor de tamaño: cqw/cqh y @container son el
+   ancho y el alto LÓGICOS, también con la pantalla girada por el juego, rot90/rotm90), no con las media queries ni los vh/vw físicos.
+   · cada personaje como mucho al 44 % del ancho (con sus márgenes de 4 % queda un hueco ≥ 8 px entre los dos);
+   · nunca por encima del borde de abajo del bocadillo (--d2-free, lo mide dialogo2d.ts al abrir cada frase). */
+#d2 { container: d2 / size; }
+#d2 .d2-host { position: absolute; bottom: calc(0px + var(--sab)); --hb: min(64cqh, 560px); height: min(calc(var(--hb) * var(--alto)), calc(44cqw / var(--asp)), calc(var(--d2-free, 9999px) * var(--alto))); width: auto; pointer-events: none; user-select: none; }
+#d2 .d2-kroak { left: calc(max(8px, 4cqw) + var(--sal)); }
+#d2 .d2-kat { right: calc(max(8px, 4cqw) + var(--sar)); }
+/* V10.4 R12: imagen en el centro del diálogo (la patata 2D de PAR-03), con una entrada corta (sin ella con «reducir movimiento») */
+#d2 .d2-prop { position: absolute; left: 50%; bottom: calc(10cqh + var(--sab)); height: min(48cqh, 400px); width: auto; transform: translateX(-50%) rotate(-10deg); pointer-events: none; user-select: none; filter: drop-shadow(0 10px 18px rgba(0,0,0,.45)); }
+#d2 .d2-prop.pop { animation: d2pop .38s cubic-bezier(.2,1.5,.4,1) both; }
+@keyframes d2pop { from { transform: translateX(-50%) rotate(-10deg) scale(.4); opacity: 0; } to { transform: translateX(-50%) rotate(-10deg) scale(1); opacity: 1; } }
+body.reduced #d2 .d2-prop.pop { animation: none; }
+#d2 .d2-bubble { position: absolute; left: 50%; transform: translateX(-50%); top: calc(max(18px, 7cqh) + var(--sat)); width: min(560px, 56cqw);
+  background: #fff; color: #24212B; border-radius: 22px; padding: 16px 20px 14px; box-shadow: 0 6px 0 rgba(232,65,140,.85); }
+#d2 .d2-bubble::after { content: ''; position: absolute; bottom: -16px; width: 0; height: 0; border: 14px solid transparent; border-top: 18px solid #fff; }
+#d2[data-habla="kroak"] .d2-bubble::after { left: 18%; transform: skewX(28deg); }
+#d2[data-habla="kat"] .d2-bubble::after { right: 18%; transform: skewX(-28deg); }
+#d2 .d2-name { display: block; font-size: 0.875rem; color: #E8418C; letter-spacing: .02em; }
+#d2 .d2-text { margin: 6px 0 12px; font-family: system-ui, sans-serif; font-weight: 700; font-size: clamp(1rem, 2.1cqw, 1.25rem); line-height: 1.32; }
+#d2 .d2-row { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+#d2 .d2-btn { min-height: 44px; min-width: 120px; padding: 8px 16px; border-radius: 14px; background: #efe7ef; color: #24212B; font-size: 0.9375rem; }
+#d2 .d2-btn.primary { background: #E8418C; color: #fff; }
+#d2 .d2-btn:focus-visible { outline: 3px solid #F4BD48; outline-offset: 2px; }
+body.pad #d2 .d2-btn[data-pad]::after { content: ' (' attr(data-pad) ')'; font-family: system-ui, sans-serif; font-size: .75rem; opacity: .8; }
+/* solo uno (modo ayuda): el que habla en su lado, el bocadillo se acerca a él */
+#d2.solo[data-solo="kroak"] .d2-bubble { left: auto; right: max(16px, 6cqw); transform: none; }
+#d2.solo[data-solo="kat"] .d2-bubble { left: max(16px, 6cqw); transform: none; }
+/* vertical (lógico): personajes más pequeños, bocadillo arriba a todo el ancho */
+@container d2 (orientation: portrait) {
+  #d2 .d2-host { --hb: min(38cqh, 420px); }
+  #d2 .d2-bubble, #d2.solo .d2-bubble { left: 16px !important; right: 16px !important; transform: none !important; width: auto; top: calc(16px + var(--sat)); }
+  #d2[data-habla="kroak"] .d2-bubble::after { left: 22%; }
+  #d2[data-habla="kat"] .d2-bubble::after { right: 22%; }
+  #d2 .d2-prop { bottom: calc(39cqh + var(--sab)); height: 25cqh; }   /* encima de los personajes, bajo el bocadillo */
+}
+/* horizontal bajo (lógico): bocadillo centrado y compacto; los personajes, del borde de abajo del bocadillo hacia abajo */
+@container d2 (orientation: landscape) and (max-height: 500px) {
+  #d2 .d2-host { --hb: 78cqh; }
+  #d2 .d2-prop { bottom: calc(6cqh + var(--sab)); height: 56cqh; }
+  #d2 .d2-bubble { width: min(520px, 50cqw); top: calc(10px + var(--sat)); padding: 12px 16px 10px; }
+  #d2 .d2-text { font-size: 1rem; margin: 4px 0 8px; }
+}
+
+/* V10.4: «Saltar tutorial» · V10.5 (AM-08, E5-16, T2): con el 2D abierto va DENTRO del 2D (botón secundario a la izquierda de «Continuar»,
+   #d2-skip); durante los ejercicios, este botón pequeño abajo en el centro (en vertical, encima de la fila de AGACHARSE/◎ y por debajo del chip de
+   modo), nunca sobre la pausa (z 2: los modales lo tapan) */
+#btn-tuto-skip { position: absolute; z-index: 2; left: 50%; transform: translateX(-50%); bottom: calc(14px + var(--sab)); min-height: 44px; padding: 8px 14px; font-size: .8rem; opacity: .92; }
+html.lay-port #btn-tuto-skip { bottom: calc(166px + var(--sab)); }
+#d2 .d2-skip { margin-right: auto; position: relative; background: transparent; color: #6b6470; border: 2px solid #d9d0da; min-width: 0; font-size: .85rem; }
+
+/* V10.4 R20 · zurdos: joystick a la derecha y los botones de acción (colocados por hudlayout.ts) crecen desde su esquina izquierda */
+body.zurdo #stick-zone { left: auto; right: 0; }
+html.rot90 body.zurdo #stick-zone, html.rotm90 body.zurdo #stick-zone { left: auto; right: 0; }
+body.zurdo #btn-jump, body.zurdo #btn-crouch, body.zurdo #btn-board, body.zurdo #btn-cam, body.zurdo #btn-dance { transform-origin: 0 100%; }
+
+/* V10.4 R20 (usuario, móvil y tablet: «que el joystick aparezca siempre en el mismo sitio y que se vea siempre… por si alguien no entiende
+   cómo moverse»): fijo abajo a la izquierda (a la derecha con zurdo), algo translúcido en reposo; se maneja tocando cualquier punto de su zona */
+#stick { left: calc(90px + var(--sal)); top: calc(100% - 112px - var(--sab)); opacity: .6; transition: opacity .15s; }
+#stick.on { opacity: 1; }
+body.zurdo #stick { left: calc(100% - 90px - var(--sar)); }
+body.grind #stick { display: none; }
+/* la opción de zurdos solo en pantallas táctiles */
+@media not (pointer: coarse) { #opt-zurdo-row, #opt-eficiente-row { display: none; } }   /* V10.5: el Modo eficiente, igual (solo táctil) */
+
+/* V10.5 (AM-20, E5-22): pestañas de «Controles» (la columna del aparato por defecto) */
+.help-tabs { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.help-tabs button { min-height: 44px; padding: 8px 16px; font-size: .9rem; }
+.help-tabs button.on { background: var(--cream); color: var(--ink); }
+/* V10.5 (AM-22, E5-28): en el tutorial (plaza blanca) no se ven la zona, el objetivo ni SKILLS (crema sobre blanco y sin sentido aún) */
+body.tutorial :is(#zone, #objective, #btn-dance) { visibility: hidden !important; }
+
+/* ======================================================================== V10.5 R4 · HUD táctil y pantallas */
+/* E5-24 (AM-17): zurdo = espejo completo. Además de los botones (hudlayout.ts) y el joystick: contador, zona, objetivo e insignia de guardado a la
+   derecha; la pausa, el icono de modo y «Activar sonido» a la izquierda; «Salir» del baile y del grafiti a la derecha (la pausa va a su esquina) */
+body.zurdo #counter { left: auto; right: calc(14px + var(--sar)); }
+body.zurdo #zone, body.zurdo #objective { left: auto; right: calc(16px + var(--sar)); text-align: right; }
+body.zurdo #save-badge { right: auto; left: calc(72px + var(--sal)); }
+body.zurdo #btn-pause { right: auto; left: calc(12px + var(--sal)); transform-origin: 0 0; }
+body.zurdo #btn-sound-fix { right: auto; left: calc(12px + var(--sal)); }
+body.zurdo #dance-exit, body.zurdo #graffiti-exit { left: auto; right: calc(12px + var(--sar)); }
+/* AM-18: el icono de modo se coloca junto a la pausa YA escalada (hudlayout fija --chip-r / --chip-l) */
+#mode-chip.mini { right: var(--chip-r, calc(70px + var(--sar))); }
+body.zurdo #mode-chip.mini { right: auto; left: var(--chip-l, calc(70px + var(--sal))); }
+/* E5-23 (AM-11, AM-35): pantallas estrechas (ancho LÓGICO < 380 px, html.lay-narrow de orient.ts): aro de 110 px algo más pegado al borde y
+   SALTO/AGACHARSE apartados lo justo para no tocarlo; ◀ ▶ del grind más pequeños para no pisar AGACHARSE */
+html.lay-narrow #stick { width: 110px; height: 110px; margin: -55px 0 0 -55px; left: calc(70px + var(--sal)); top: calc(100% - 96px - var(--sab)); }
+html.lay-narrow #stick i { width: 50px; height: 50px; margin: -25px 0 0 -25px; }
+html.lay-narrow body.zurdo #stick { left: calc(100% - 70px - var(--sar)); }
+html.lay-narrow #btn-jump { width: 92px; height: 92px; right: calc(18px + var(--sar)); }
+html.lay-narrow #btn-crouch { width: 76px; height: 56px; right: calc(112px + var(--sar)); }
+html.lay-narrow body.grind #touch .lean { width: 92px; height: 92px; bottom: calc(14px + var(--sab)); }
+html.lay-narrow body.grind #btn-lean-l { left: calc(12px + var(--sal)); } html.lay-narrow body.grind #btn-lean-r { right: calc(12px + var(--sar)); }
+/* AM-24: la barra del editor de tamaño va en el centro (arriba tapaba el contador, la zona y el objetivo) */
+#btn-size .bs-bar { top: 50%; transform: translate(-50%, -50%); }
+/* AM-25, E5-28: «Volver» de Ajustes y de Controles siempre a la vista (fijo abajo aunque se desplace la pantalla) */
+#settings #btn-settings-close, #help #btn-help-close { position: sticky; bottom: 0; z-index: 1; box-shadow: 0 6px 0 var(--fuchsia), 0 -10px 18px rgba(36,33,43,.85); }
+/* AM-35: «Vale» de las charlas ≥ 44 px */
+#dialog-ok { min-height: 44px; min-width: 72px; }
+/* V10.5 (E5-26, E5-38, T6): con la franja 16:9 (html.franja) no se suman las bandas de cine de 11 vh y «SALTAR ▸» va en la banda negra de abajo,
+   siempre a la vista (--franja-pad = alto de cada banda negra, lo fija game.ts) */
+html.franja body.cine::before, html.franja body.cine::after, html.franja body.finale-reducido::before, html.franja body.finale-reducido::after { height: 0; }
+html.franja #btn-cine-skip { bottom: max(12px, calc(var(--franja-pad, 0px) / 2 - 22px)); }
+
+/* ======================================================================== V10.6 (V10/IT9/B1_MOVIL.md, B3_PAUSA.md, B6_CREDITOS.md) */
+/* H8-20: en pantalla táctil los botones de las capas (pausa, Ajustes, confirmaciones…) y sus barras ofrecen ≥ 44 px de toque (antes 41 y 16) */
+@media (pointer: coarse) {
+  .screen button.small, .screen button.link { min-height: 44px; }
+  .screen input[type=range] { min-height: 44px; }
+}
+/* H8-14: con la pausa abierta, «SALTAR ▸» de la cinemática no queda encima de ella (z-index 6 sobre 5) */
+body:has(#pause:not([hidden])) #btn-cine-skip { visibility: hidden; }
+/* 1.6: con el 2D abierto, la pausa (II) se puede tocar: el HUD sube por encima del 2D (como con el baile y el grafiti) y sus otros elementos, que
+   quedaban bajo el velo del 2D, no se ven. El bocadillo deja libre la esquina de II para no montarse con él */
+body:has(#d2:not([hidden])) #hud { z-index: 5; }
+body:has(#d2:not([hidden])) #hud > :not(#btn-pause) { visibility: hidden; }
+#d2 { --ii: calc(20px + 48px * var(--btn-k, 1)); }
+@container d2 (orientation: portrait) {
+  body:not(.zurdo) #d2 .d2-bubble, body:not(.zurdo) #d2.solo .d2-bubble { right: calc(var(--ii) + var(--sar)) !important; }
+  body.zurdo #d2 .d2-bubble, body.zurdo #d2.solo .d2-bubble { left: calc(var(--ii) + var(--sal)) !important; }
+}
+body:not(.zurdo) #d2.solo[data-solo="kroak"] .d2-bubble { right: max(calc(var(--ii) + var(--sar)), 6cqw); }
+body.zurdo #d2.solo[data-solo="kat"] .d2-bubble { left: max(calc(var(--ii) + var(--sal)), 6cqw); }
+/* B6: cabecera de Ajustes con «Créditos» y la capa de créditos */
+.ajustes-cab { display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; }
+.ajustes-cab h2 { margin: 0; }
+#creditos { z-index: 6; }
+body.desde-inicio #creditos { z-index: 9; }
+#creditos h2 { margin: 0; }
+.creditos { margin: 0; display: grid; gap: 14px; text-align: center; }
+.creditos dt { font-family: system-ui, sans-serif; font-weight: 700; font-size: .875rem; color: var(--pink-l, #f6a9c9); letter-spacing: .02em; }
+.creditos dd { margin: 2px 0 0; font-size: 1.375rem; color: var(--cream); }
+.creditos-colab dd span { white-space: nowrap; }
+.creditos-priv { display: inline-flex; align-items: center; min-height: 32px; padding: 0 12px; font-family: system-ui, sans-serif; font-size: .875rem; color: var(--cream); opacity: .8; }
+@media (pointer: coarse) { .creditos-priv { min-height: 44px; } }
+/* 1.7: pantallas bajas en horizontal (móviles apaisados, html.lay-baja de orient.ts): la pausa y Ajustes caben sin desplazar */
+html.lay-baja .screen { padding-top: calc(8px + var(--sat)); padding-bottom: calc(8px + var(--sab)); gap: 6px; }
+html.lay-baja #pause { flex-flow: row wrap; justify-content: center; align-content: flex-start; align-content: safe center; column-gap: 16px; }
+html.lay-baja #pause > h2 { flex-basis: 100%; text-align: center; font-size: 1.25rem; }
+html.lay-baja #pause #btn-resume { font-size: 1.25rem; padding: 8px 30px; min-height: 44px; box-shadow: 0 4px 0 var(--fuchsia); }
+html.lay-baja #pause > .row.wrap { flex-basis: 100%; display: flex; gap: 6px; }
+/* V10.6: con «Créditos» en la pausa no cabía en el SE horizontal (568×320; v10_6/capas): «Seguir» y el volumen comparten línea */
+html.lay-baja #pause > .row.wrap:first-of-type { flex-basis: auto; }
+html.lay-baja #pause .small { font-size: .875rem; padding: 8px 14px; }
+html.lay-baja #pause #save-note { margin: 0; }
+html.lay-baja #settings { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "cab cerrar" "opts opts"; justify-content: stretch; align-content: start; column-gap: 16px; row-gap: 6px; }
+html.lay-baja #settings .ajustes-cab { grid-area: cab; justify-content: flex-start; flex-wrap: nowrap; }
+html.lay-baja #settings .small { font-size: .875rem; padding: 8px 14px; }
+html.lay-baja #settings .ajustes-cab h2 { font-size: 1.25rem; }
+html.lay-baja #settings #btn-settings-close { grid-area: cerrar; justify-self: end; position: static; align-self: center; font-size: 1.125rem; padding: 8px 26px; min-height: 44px; box-shadow: 0 4px 0 var(--fuchsia); }
+html.lay-baja #settings .opts { grid-area: opts; display: grid; grid-template-columns: 1fr 1fr; grid-auto-flow: row dense; column-gap: 24px; row-gap: 4px; max-width: none; align-items: center; }
+html.lay-baja #settings .opts > :nth-child(-n+5) { grid-column: 1; }
+html.lay-baja #settings .opts > :nth-child(n+6) { grid-column: 2; }
+html.lay-baja #settings .opts > #opt-drive-note { grid-column: 1 / -1; }
+html.lay-baja #settings .opts p { margin: 0; font-size: .75rem; }
+html.lay-baja #settings .opts label { font-size: .8125rem; line-height: 1.25; }
+html.lay-baja #creditos { gap: 8px; }
+html.lay-baja #creditos .creditos { grid-template-columns: repeat(3, auto); column-gap: 32px; row-gap: 8px; justify-content: center; }
+html.lay-baja #creditos .creditos-colab { grid-column: 1 / -1; }
+html.lay-baja #creditos .creditos dd { font-size: 1.125rem; }
+html.lay-baja #creditos #btn-creditos-close { font-size: 1.125rem; padding: 8px 26px; min-height: 44px; }
+/* 1.7: pantallas cortas en vertical (iPhone SE, html.lay-corta): menos márgenes y huecos */
+html.lay-corta .screen { padding: calc(12px + var(--sat)) calc(14px + var(--sar)) calc(12px + var(--sab)) calc(14px + var(--sal)); gap: 8px; }
+html.lay-corta #pause h2, html.lay-corta #settings h2 { font-size: 1.6rem; }
+html.lay-corta #pause > .row.wrap { display: flex; gap: 6px; }
+html.lay-corta .opts { gap: 6px; }
+html.lay-corta .opts p { margin: 0; }
+html.lay-corta .opts label { font-size: .875rem; }
+/* 1.7: las casillas no encogen cuando su texto ocupa dos líneas (en dos columnas se quedaban en 15 px) */
+.opts input[type=checkbox] { flex-shrink: 0; }
+/* V10.6 (petición del usuario): «Recomendamos usar cascos». Velo como el del 2D (misma opacidad y desenfoque) pero en el chocolate de la marca
+   (el marrón oscuro de los letreros de Imaginario ANMI y de la portada, #3a140c) para distinguirlo del diálogo que sale después */
+#cascos { z-index: 8; background: rgba(58,20,12,.78); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); gap: 14px; }
+#cascos .cascos-img { display: block; width: auto; height: min(34vh, 300px); max-width: 86vw; object-fit: contain; pointer-events: none; user-select: none; }
+html.lay-baja #cascos .cascos-img { height: min(38vh, 200px); }
+html.lay-baja #cascos { gap: 8px; } html.lay-baja #cascos h2 { font-size: 1.5rem; } html.lay-baja #cascos p { font-size: .95rem; }
+#cascos h2 { margin: 0; font-size: clamp(1.6rem, 6vw, 2.4rem); color: var(--cream); text-shadow: 0 3px 0 var(--fuchsia); }
+#cascos p { margin: 0; max-width: 30ch; font-family: system-ui, sans-serif; font-weight: 700; font-size: 1.05rem; line-height: 1.35; color: var(--cream); }

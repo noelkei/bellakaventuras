@@ -1,0 +1,220 @@
+#!/usr/bin/env python3
+# Récord del cronómetro de speedrun (V10.6.1, usuario 25 oct: automático + aviso al móvil). Cada 2 min (bk-record.timer).
+# Servidor: /usr/local/bin/bk-record. Lee del registro de Caddy, por donde lo dejó (como bk-contadores), los avisos /e/crono?ds=<décimas> que manda
+# el juego al terminar una carrera SIN recargas, guarda los mejores y publica el récord en /var/lib/bk-record/record.json, que Caddy sirve en
+# /e/record (por /e/ para que Bunny no lo guarde nunca). Si cambia, aviso ntfy (el mismo tema que el vigilante). Descarta las pruebas
+# automáticas (cabecera X-Bk-Prueba o navegador «Headless»/«BK-Prueba»); las partidas de casa SÍ cuentan (un récord de verdad es un récord).
+# Solo cuenta lo que llega desde que se instala (DESDE en el estado): lo de antes no existe (usuario: «da igual lo que se hizo antes»).
+#   bk-record                 una pasada
+#   bk-record --ver           récord actual y los 10 mejores, sin avisar
+#   bk-record --quitar        quita el récord actual (falso) → pasa el siguiente; queda apuntado para no volver
+#   bk-record --quitar-ds N   quita todos los tiempos de N décimas
+#   bk-record --devolver N    deshace un --quitar de N décimas
+#   bk-record --empezar T     BORRA todos los tiempos y empieza el top con un único registro T (usuario, 25 oct: «10:00.0» al publicar)
+# Los tiempos (T) se pueden escribir como en el juego (7:41.2, 1:02:03.4) o en décimas (4612).
+import glob, re, gzip, json, os, subprocess, sys, time, urllib.parse
+LOG = os.environ.get("BK_LOG", "/var/log/caddy/bellaka-acceso.log")
+EST = os.environ.get("BK_EST", "/var/lib/bk-record")
+SALIDA = os.path.join(EST, "record.json")
+MAX_DS = 864000          # 24 h en décimas (el mismo límite que el esquema del juego)
+GUARDA = 200             # mejores tiempos que se conservan (para pasar al siguiente si se quita uno)
+TOP = 3                  # el juego enseña siempre el top 3 (usuario, 25 oct); aviso al móvil cada vez que cambia
+
+
+def ntfy(titulo, texto, prio=3, etiquetas="bellaka,trophy"):
+    prueba = os.environ.get("BK_NTFY_ARCHIVO")   # pruebas: el aviso se escribe en un archivo en vez de mandarse
+    if prueba:
+        open(prueba, "a").write(json.dumps({"titulo": titulo, "texto": texto, "prio": prio}, ensure_ascii=False) + "\n"); return
+    url = ""
+    try:
+        for l in open("/etc/bk/avisos.conf"):
+            if l.startswith("NTFY_URL="):
+                url = l.split("=", 1)[1].strip().strip('"')
+    except Exception:
+        pass
+    if url:
+        subprocess.run(["curl", "-s", "-m", "10", "-H", f"Title: {titulo}", "-H", f"Priority: {prio}", "-H", f"Tags: {etiquetas}", "-d", texto, url],
+                       capture_output=True)
+
+
+def formato(ds):
+    s, d = divmod(ds, 10); h, s = divmod(s, 3600); m, s = divmod(s, 60)
+    return f"{h}:{m:02d}:{s:02d}.{d}" if h else f"{m}:{s:02d}.{d}"
+
+
+def leer_estado():
+    try:
+        return json.load(open(os.path.join(EST, "estado.json")))
+    except Exception:
+        return {}
+
+
+def guardar_json(ruta, datos):
+    os.makedirs(EST, exist_ok=True)
+    tmp = ruta + ".tmp"; json.dump(datos, open(tmp, "w"), ensure_ascii=False); os.chmod(tmp, 0o644); os.replace(tmp, ruta)
+
+
+def aparato(ua):
+    if "iPhone" in ua or "iPad" in ua: d = "iPhone" if "iPhone" in ua else "iPad"
+    elif "Android" in ua: d = "Android"
+    elif "Mac OS X" in ua or "Windows" in ua or "Linux" in ua or "CrOS" in ua: d = "Ordenador"
+    else: d = "?"
+    a = "Instagram" if "Instagram" in ua else "TikTok" if ("musical_ly" in ua or "TikTok" in ua or "BytedanceWebview" in ua) else ""
+    return f"{d} · {a}" if a else d
+
+
+def candidato(b, desde):
+    """Una línea del registro → (ds, ts, aparato) si es un /e/crono válido de un jugador (sin pruebas), o None."""
+    if b'"/e/crono' not in b:
+        return None
+    try:
+        r = json.loads(b); q = r["request"]
+    except Exception:
+        return None
+    h = q.get("headers", {}); ua = " ".join(h.get("User-Agent", []))
+    if "X-Bk-Prueba" in h or "BK-Prueba" in ua or "Headless" in ua or int(r.get("status", 0)) >= 400:
+        return None
+    ruta, _, qs = (q.get("uri") or "").partition("?")
+    if ruta != "/e/crono":
+        return None
+    ds = urllib.parse.parse_qs(qs).get("ds", [""])[0]
+    ts = float(r.get("ts", 0))
+    if not ds.isdigit() or not (0 < int(ds) <= MAX_DS) or ts < desde:
+        return None
+    return int(ds), round(ts, 3), aparato(ua)
+
+
+def leer_nuevos(e):
+    """Lo nuevo desde la última vez. Si Caddy ha rotado el registro, primero termina el viejo (el .gz más reciente)."""
+    st = os.stat(LOG); pos = e.get("pos", 0); desde = e["desde"]; nuevos = []
+    if e.get("ino") is not None and (e.get("ino") != st.st_ino or pos > st.st_size):
+        viejos = sorted(glob.glob(LOG.replace(".log", "-*.log.gz")), key=os.path.getmtime)
+        if viejos:
+            try:
+                with gzip.open(viejos[-1], "rb") as f:
+                    n = 0
+                    for b in f:
+                        n += len(b)
+                        if n > pos:
+                            c = candidato(b, desde)
+                            if c: nuevos.append(c)
+            except Exception:
+                pass
+        pos = 0
+    if e.get("ino") is None:   # primera vez: solo lo que llegue a partir de ahora
+        pos = st.st_size
+    with open(LOG, "rb") as f:
+        f.seek(pos)
+        for b in f:
+            if not b.endswith(b"\n"):
+                break
+            pos += len(b); c = candidato(b, desde)
+            if c: nuevos.append(c)
+    e["ino"], e["pos"] = st.st_ino, pos
+    return nuevos
+
+
+def vivos(e):
+    q = set(e.get("quitados", []))
+    return sorted((c for c in e.get("mejores", []) if c[0] not in q), key=lambda c: (c[0], c[1]))
+
+
+def actual(e):
+    v = vivos(e)
+    return v[0] if v else None
+
+
+def a_ds(t):
+    """«7:41.2», «1:02:03.4» o décimas («4612») → décimas; None si no se entiende."""
+    t = t.strip()
+    if t.isdigit():
+        return int(t)
+    m = re.fullmatch(r"(?:(\d+):)?(\d+):(\d{1,2})(?:[.,](\d))?", t)
+    if not m:
+        return None
+    h, mi, se, de = (int(x) if x else 0 for x in m.groups())
+    return ((h * 3600 + mi * 60 + se) * 10) + de
+
+
+def contenido(e):
+    """Lo que lee el juego: el top 3 (solo tiempos: sin nombres, decisión del usuario 25 oct)."""
+    top = [{"ds": c[0]} for c in vivos(e)[:TOP]]
+    return {"n": TOP, "top": top, "ds": top[0]["ds"] if top else None}   # «ds»: el récord (compatibilidad)
+
+
+def texto_top(e):
+    return " · ".join(f"{i + 1}. {formato(c[0])}" for i, c in enumerate(vivos(e)[:TOP])) or "vacío"
+
+
+def publicar(e, motivo, antes=None):
+    """Escribe record.json si ha cambiado el top y avisa al móvil: cada tiempo nuevo que entra en el top 3 (con su puesto) y cada quitar/devolver."""
+    c = contenido(e)
+    if json.dumps(c, sort_keys=True) == e.get("publicado_top") and os.path.exists(SALIDA):
+        return
+    guardar_json(SALIDA, c)
+    e["publicado_top"] = json.dumps(c, sort_keys=True)
+    ahora = vivos(e)[:TOP]
+    if motivo == "pasada":
+        viejos = {tuple(x[:2]) for x in (antes or [])}
+        nuevos = [(i, x) for i, x in enumerate(ahora) if tuple(x[:2]) not in viejos]
+        if nuevos:
+            i, x = nuevos[0]   # el mejor puesto nuevo da el título (si entran varios a la vez, salen todos en el top del texto)
+            titulo = ["🏆 Nuevo récord", "🥈 Nuevo 2.º del top", "🥉 Nuevo 3.º del top"][i] + f": {formato(x[0])}"
+            cuando = time.strftime("%d/%m %H:%M", time.localtime(x[1]))
+            ntfy(titulo, f"Bellakaventuras ({x[2]}, {cuando}). Top 3: {texto_top(e)}. Si es falso: record.sh quitar {formato(x[0])}", prio=4 if i == 0 else 3)
+    elif motivo == "empezado":
+        ntfy("🏆 Top empezado de cero", f"Top 3: {texto_top(e)} (en el juego, los puestos vacíos repiten el último tiempo).", prio=3)
+    elif motivo in ("quitado", "devuelto"):
+        ntfy("🏆 Tiempo quitado del top" if motivo == "quitado" else "🏆 Tiempo devuelto", f"Top 3 ahora: {texto_top(e)}.", prio=3)
+
+
+def pasada():
+    e = leer_estado(); e.setdefault("desde", time.time()); e.setdefault("mejores", []); e.setdefault("quitados", [])
+    antes = [list(c) for c in vivos(e)[:TOP]]
+    nuevos = leer_nuevos(e)
+    if nuevos:
+        e["mejores"] = sorted(e["mejores"] + [list(c) for c in nuevos], key=lambda c: (c[0], c[1]))[:GUARDA]
+    publicar(e, "pasada", antes)
+    guardar_json(os.path.join(EST, "estado.json"), e)
+
+
+def ver(e):
+    x = actual(e); q = set(e["quitados"]); n = TOP
+    print("Récord:", formato(x[0]) if x else "ninguno", f"· el juego enseña el top {n}",
+          "· contando desde", time.strftime("%d/%m/%Y %H:%M", time.localtime(e["desde"])))
+    k = 0
+    for c in e["mejores"][:10]:
+        quit = c[0] in q; k += 0 if quit else 1
+        marca = "  (quitado)" if quit else (f"  ← {k}.º en el juego" if k <= n else "")
+        print(f"  {formato(c[0]):>10}  {time.strftime('%d/%m %H:%M', time.localtime(c[1]))}  {c[2]:<20}{marca}")
+
+
+def main():
+    a = sys.argv[1:]
+    if not a:
+        return pasada()
+    e = leer_estado(); e.setdefault("desde", time.time()); e.setdefault("mejores", []); e.setdefault("quitados", [])
+    if a[0] == "--ver":
+        return ver(e)
+    motivo = "cambio"
+    T = a_ds(a[1]) if len(a) > 1 else None
+    if a[0] == "--quitar" and len(a) == 1:
+        x = actual(e)
+        if not x: print("No hay récord que quitar."); return
+        e["quitados"].append(x[0]); print("Quitado", formato(x[0])); motivo = "quitado"
+    elif a[0] in ("--quitar", "--quitar-ds") and T:
+        e["quitados"].append(T); print("Quitado", formato(T)); motivo = "quitado"
+    elif a[0] == "--empezar" and T:
+        e["mejores"] = [[T, round(time.time(), 3), "Registro inicial"]]; e["quitados"] = []; e["desde"] = time.time()
+        print(f"Top empezado de cero con {formato(T)}"); motivo = "empezado"
+    elif a[0] == "--devolver" and T:
+        e["quitados"] = [d for d in e["quitados"] if d != T]; print("Devuelto", formato(T)); motivo = "devuelto"
+    else:
+        print("uso: bk-record [--ver | --quitar [T] | --devolver T | --empezar T]   (T = 7:41.2 o décimas)"); sys.exit(2)
+    publicar(e, motivo)
+    guardar_json(os.path.join(EST, "estado.json"), e)
+    ver(e)
+
+
+if __name__ == "__main__":
+    main()

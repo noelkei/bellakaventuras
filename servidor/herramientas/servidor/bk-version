@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# Gestión de versiones del juego en el servidor (Bellakaventuras, oct 2026).
+# Cada versión vive en /srv/bellaka/releases/<id>; Caddy sirve /srv/bellaka/current (enlace simbólico).
+#
+#   bk-version lista              versiones guardadas (* = la que se sirve)
+#   bk-version activar <id>       sirve esa versión (cambio atómico)
+#   bk-version volver [<id>]      vuelve a la versión anterior (o a la indicada)
+#   bk-version limpiar [N]        borra las versiones viejas y deja las N más recientes (6 por defecto)
+set -euo pipefail
+
+BASE=/srv/bellaka
+REL="$BASE/releases"
+CUR="$BASE/current"
+LOG="$BASE/publicaciones.log"
+
+actual() { [ -L "$CUR" ] && basename "$(readlink "$CUR")" || echo ""; }
+
+activar() {
+  local id="$1"
+  [ -f "$REL/$id/index.html" ] || { echo "No existe la versión $id (o no tiene index.html)" >&2; exit 1; }
+  local antes; antes="$(actual)"
+  ln -sfn "releases/$id" "$BASE/current.nuevo"
+  mv -T "$BASE/current.nuevo" "$CUR"
+  echo "$(date '+%F %T %Z') activar $id (antes: ${antes:-ninguna})" >> "$LOG"
+  echo "Sirviendo $id (antes: ${antes:-ninguna})"
+}
+
+case "${1:-lista}" in
+  lista)
+    a="$(actual)"
+    for d in $(ls -1 "$REL" | sort); do
+      [ "$d" = "$a" ] && m="*" || m=" "
+      printf '%s %s  %s archivos\n' "$m" "$d" "$(find "$REL/$d" -type f ! -name '*.zst' ! -name '*.br' ! -name '*.gz' | wc -l)"
+    done ;;
+  activar)
+    activar "${2:?Falta el id de la versión}" ;;
+  volver)
+    if [ -n "${2:-}" ]; then
+      activar "$2"
+    else
+      a="$(actual)"
+      prev="$(ls -1 "$REL" | sort | grep -B1 -x "$a" | head -1)"
+      [ -n "$prev" ] && [ "$prev" != "$a" ] || { echo "No hay versión anterior a $a" >&2; exit 1; }
+      activar "$prev"
+    fi ;;
+  limpiar)
+    n="${2:-6}"; a="$(actual)"
+    ls -1 "$REL" | sort | head -n "-$n" | while read -r d; do
+      [ "$d" = "$a" ] && continue
+      rm -rf "${REL:?}/$d" && echo "Borrada $d" && echo "$(date '+%F %T %Z') limpiar $d" >> "$LOG"
+    done ;;
+  *) sed -n '2,9p' "$0"; exit 1 ;;
+esac

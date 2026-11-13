@@ -1,0 +1,27 @@
+# Se regenera solo
+node_modules/
+game/dist*/
+game/.cache/
+game/captures/
+__pycache__/
+*.pyc
+.DS_Store
+
+# Nunca subir: claves, datos y copias privadas
+.bunny-api
+.acceso-pruebas
+.avisos-ntfy
+.wrangler/
+.openai
+.env*
+*.pub
+*.pem
+*.key
+*.sqlite
+*.parquet
+respaldos/
+datos/*.sqlite
+informes/
+*.tar.gz
+*.zip
+*.wav

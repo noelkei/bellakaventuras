@@ -1,0 +1,117 @@
+{
+ "_comment": "Configuración editable sin recompilar (rutas relativas a la página). V4 (HUM-A4-014): cada pista es un derivado que contiene SOLO la ventana pedida de la canción original (assets/derived/v4/audio/cuts_v4.json); el runtime la usa con offsets 0..duración y una costura circular con muestras internas (loops.xfade). cuts.* declara in/out/muestras para comprobar el archivo servido. preview: visual = ruta de la pieza oficial (null → composición propia); el audio del preview es la ventana central 0:42–1:01 (19 s). V10.1 (19 oct): SECRETNOVIO en el parque = 0:32–0:59 (sigue a la escena final, que suena de 0:00 a 0:32).",
+ "audio": {
+  "masterVolume": 0.8,
+  "tracks": {
+   "no_me_guillo": "audio/no_me_guillo-v4.m4a",
+   "nosvamosdeaqui": "audio/nosvamosdeaqui-v4.m4a",
+   "yinyang": "audio/yinyang-v4.m4a",
+   "tratratra": "audio/tratratra-v4.m4a",
+   "fashion_girl": "audio/fashion_girl-v4.m4a",
+   "secretnovio": "audio/secretnovio-v103.m4a"
+  },
+  "radio": {},
+  "trims": {
+   "no_me_guillo": -1.7,
+   "nosvamosdeaqui": 3.9,
+   "yinyang": 1.4,
+   "tratratra": -2.2,
+   "fashion_girl": 3.3,
+   "secretnovio": 3.6
+  },
+  "trimsPre": {
+   "yinyang": -2.7,
+   "fashion_girl": -3.5,
+   "no_me_guillo": -4.3,
+   "tratratra": -0.9,
+   "nosvamosdeaqui": 1.8,
+   "secretnovio": 0.9
+  },
+  "loops": {
+   "no_me_guillo": {
+    "xfade": 0.09
+   },
+   "nosvamosdeaqui": {
+    "xfade": 0.09
+   },
+   "yinyang": {
+    "xfade": 0.09
+   },
+   "tratratra": {
+    "xfade": 0.09
+   },
+   "fashion_girl": {
+    "xfade": 0.09
+   },
+   "secretnovio": {
+    "xfade": 0.09
+   }
+  },
+  "cuts": {
+   "yinyang": {
+    "in": 8,
+    "out": 38,
+    "samples": 1440000,
+    "sampleRate": 48000,
+    "sha256": "872b2c8f5087437fdd2e3c77f23f334ccef3a21dfa7dcac184fe0260a78499a6"
+   },
+   "fashion_girl": {
+    "in": 47,
+    "out": 83,
+    "samples": 1728000,
+    "sampleRate": 48000,
+    "sha256": "587e0e1ed90ae8d04582e3e5c73ace9b0fbdfd5164378bb8a62ab019db0c08d8"
+   },
+   "no_me_guillo": {
+    "in": 70,
+    "out": 85,
+    "samples": 720000,
+    "sampleRate": 48000,
+    "sha256": "de2c502ae0d40e8e30ee0d4b00faed20eaf3d6c6e805df2b34c8a9ce5f367104"
+   },
+   "tratratra": {
+    "in": 10,
+    "out": 34,
+    "samples": 1152000,
+    "sampleRate": 48000,
+    "sha256": "f834aeb96c72ac232696a9e0dfb1c26b542d0d65dd257b2f0fd031e3bda059de"
+   },
+   "nosvamosdeaqui": {
+    "in": 33,
+    "out": 60,
+    "samples": 1296000,
+    "sampleRate": 48000,
+    "sha256": "26604aab383651684abe5fc87f503407df0c921bd8824a6322225b79e85c2015"
+   },
+   "secretnovio": {
+    "in": 32,
+    "out": 52,
+    "samples": 960000,
+    "sampleRate": 48000,
+    "sha256": "b6215ed197e6b6a5efdde433afc6539eb05336f0fc80f28fbba3fd9355431da4"
+   }
+  },
+  "central": {
+   "flashPeriod": 10,
+   "flashHold": 1.0,
+   "flashLevel": 0.5,
+   "flashRamp": 0.08
+  }
+ },
+ "preview": {
+  "visual": null,
+  "visualLabel": "SECRETNOVIO · adelanto",
+  "audioTrack": "secretnovio",
+  "label": ""
+ },
+ "cta": {
+  "enabled": false,
+  "url": null,
+  "label": "Escuchar ahora",
+  "disabledNote": "Sin enlace oficial todavía: el botón aparecerá cuando exista la URL real."
+ },
+ "share": {
+  "enabled": true,
+  "text": "He reunido las 20 patatas y desbloqueado SECRETNOVIO en Bellakaventuras"
+ }
+}

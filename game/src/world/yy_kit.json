@@ -1,0 +1,388 @@
+{
+  "version": "8.3",
+  "date": "2026-10-15",
+  "note": "Contrato ÚNICO de YINYANG V8. Coordenadas locales = lámina v24 SIN rotar (x, v, h) en metros; la rotación de 4° de la planta y el marco se aplican una sola vez al pasar a mundo (yy.ts / yy_geom.py). Geometría de diseño en planta-v24/layout.json y torre-t1-v2/dimensiones-t1.json (no se copian aquí: se leen).",
+  "frame": {
+    "axis_deg": 261,
+    "axis_v10_note": "V10 (Bola de Oro §07): giro horario de la corona 9° → eje 252 + 9 = 261. El vaso (yy_pool.bin/json) se regenera con assets/derived/v8/yinyang/build_yy_pool.py desde este número (una sola vez); version 8.2 → 8.3 obliga a regenerar.",
+    "handedness": "plan_top_view",
+    "formula": "X = v·sinθ + x·cosθ ; Z = −v·cosθ + x·sinθ (x local tras la rotación de 4°)",
+    "literal_layout_formula": "X = v·sinθ − x·cosθ ; Z = −v·cosθ − x·sinθ",
+    "why": "R8-01: con la fórmula literal la lámina se ve en espejo desde el parque (E1 a la derecha y el rótulo Bellakaciones al revés); la lámina, las seis vistas y la regla «sin espejo» la tratan como vista cenital. Mismo sector, radios y cotas; solo cambia la quiralidad. Conmutable con handedness = 'layout_literal'.",
+    "offsetV": 1.0,
+    "offsetV_note": "R1 usuario: todo el conjunto 1 m hacia fuera en v (tras la rotación de 4°)"
+  },
+  "rotation_applied_once": true,
+  "wall": {
+    "vertical": 0.8,
+    "curveRunPerDepth": 0.75,
+    "curveRunMin": 0.15,
+    "curveRunMax": 1.5
+  },
+  "transitions": {
+    "R1": {
+      "run": 0.7,
+      "s0": -0.35,
+      "profile": "walk",
+      "ease": 0.09,
+      "upper": "N1",
+      "lower": "N2_left"
+    },
+    "R2": {
+      "run": 0.7,
+      "s0": -0.35,
+      "profile": "walk",
+      "ease": 0.09,
+      "upper": "N1",
+      "lower": "N3"
+    },
+    "R3b": {
+      "run": 0.7,
+      "s0": -0.35,
+      "profile": "walk",
+      "ease": 0.09,
+      "upper": "N2_right",
+      "lower": "N3"
+    },
+    "note": "R1–R2 usuario: 0,70 m, perfil subible a pie (≤ 51°) y en tabla con impulso; regiones del layout. R3a no existe (N2 izquierda = antiguo N3)"
+  },
+  "coping": {
+    "width": 0.3,
+    "note": "franja crema del remate, plana sobre el deck (solo visual)"
+  },
+  "rotation": {
+    "deg": 4.0,
+    "pivot": [
+      0.0,
+      31.8
+    ],
+    "note": "copia de layout.rotation (build_yy_pool.py comprueba la igualdad); se aplica UNA vez a toda coordenada local de este contrato"
+  },
+  "levels": {
+    "N1": -1.0,
+    "N2": -1.75,
+    "regions": {
+      "N1": "N1",
+      "N2_right": "N1",
+      "N2_left": "N2",
+      "N3": "N2"
+    },
+    "note": "R2 usuario: dos niveles; regiones del layout v24 asignadas a N1 o N2"
+  },
+  "p1": {
+    "center": [
+      1.4,
+      31.9
+    ],
+    "r": 2.8,
+    "note": "R1 usuario: P1 50 cm más ancho (antes 2,30, Ø4,60 → Ø5,60); recorta el vaso alrededor"
+  },
+  "t1": {
+    "source": "torre-t1-v2/dimensiones-t1.json",
+    "r": 1.0,
+    "height": 5.6,
+    "shaftTop": 3.6,
+    "headR": 0.985,
+    "whiteTop": 3.6,
+    "cutCenter": 4.6,
+    "cutTilt": 45,
+    "grille": {
+      "r": 0.992,
+      "bar": 0.016,
+      "z0": 3.64,
+      "pitch": 0.085,
+      "n": 23,
+      "rimZ": 5.582,
+      "rimD": 0.036,
+      "rimR": 0.982
+    },
+    "posts": {
+      "r": 0.982,
+      "d": 0.036,
+      "anglesBlender": [
+        180,
+        240,
+        300,
+        360
+      ],
+      "z": [
+        3.6,
+        5.6
+      ]
+    },
+    "front": "-v (hacia N3); en el GLB/three local +Z",
+    "materials": {
+      "white": "#d9d5c9",
+      "bronze": "#77664f",
+      "grille": "#8e8776"
+    },
+    "note": "R2 usuario: sin el tramo blanco (0.80 m) y 0.80 m menos de fuste: altura 5.6 m; la rejilla arranca sobre el fuste"
+  },
+  "logo": {
+    "source": "referencias/escenarios/YINYANG/dossier-definitivo-menta-rosa-v4-2026-10-15/branding/Bellakaciones-curvado-original.png",
+    "png": [
+      1991,
+      790
+    ],
+    "visiblePx": [
+      33,
+      161,
+      1958,
+      676
+    ],
+    "visibleWidth": 6.0,
+    "K_px": 925,
+    "K_axis_x": 1.4,
+    "visibleCenterV": 27.95,
+    "note": "Ancho VISIBLE 6,00 m (punto de partida del layout); alto por la proporción del PNG nuevo (no el 2,001 antiguo). K medida sobre este PNG (tallo x≈925 px → 0,4646 del ancho total; no el 0,46 antiguo). Centro visible en v 28,5 = el del layout anterior. R1 usuario: con P1 más ancho el centro baja a v 28,15 (99 % de las letras sobre suelo plano, medido); K sigue en el eje de T1."
+  },
+  "activity": {
+    "target": {
+      "arcDeg": 120,
+      "h0": 0.75,
+      "h1": 3.15,
+      "r": 1.006,
+      "grid": [
+        120,
+        138
+      ],
+      "targetRevision": 8
+    },
+    "paintSpot": [
+      1.4,
+      30.35
+    ],
+    "cam": [
+      1.4,
+      27.0,
+      2.15
+    ],
+    "camLook": [
+      1.4,
+      31.0,
+      1.85
+    ],
+    "talkZoneR": 1.3,
+    "celebrateCam": [
+      4.4,
+      27.9,
+      2.25
+    ],
+    "precision": {
+      "version": "yy8-p1",
+      "brushR_m": 0.11,
+      "tolMargin_m": 0.05,
+      "centerTolFrac": 0.5,
+      "step_m": 0.025,
+      "coverGoal": 0.92,
+      "errAreaFrac": 0.1,
+      "errRun_m": 1.2,
+      "note": "Propuesta técnica calibrada (no decisión humana). Todo en metros de la diana: independiente de CSS, DPR, orientación y frecuencia de eventos. Área de error = celdas pintadas FUERA de la máscara dilatada brushR+tolMargin (pintar sobre el dibujo nunca cuenta). Recorrido exterior = longitud de trazo (subsegmentos interpolados, incluido el puntero capturado fuera del lienzo) con el centro del pincel fuera de la máscara dilatada centerTolFrac·brushR+tolMargin. Falla si área > errAreaFrac·|máscara| o recorrido > errRun_m; si en el mismo paso se alcanza también el éxito, prevalece el fallo."
+    }
+  },
+  "frog": {
+    "home": [
+      2.45,
+      34.85
+    ],
+    "faceTo": [
+      1.4,
+      36.0
+    ],
+    "watch": [
+      2.94,
+      31.18
+    ],
+    "ringR": 1.65,
+    "route": "home → anillo P1 por la derecha (φ 180→150→120→90→65) → watch",
+    "scale": 0.5
+  },
+  "pickups": {
+    "visible": {
+      "p": [
+        -7.2,
+        31.4,
+        -1.0
+      ],
+      "access": "roll",
+      "hint": "Al bajar la escalera E1, en el fondo N1"
+    },
+    "medium": {
+      "p": [
+        -15.241,
+        27.37,
+        0.45
+      ],
+      "access": "ollie",
+      "hint": "Encima del banco de la izquierda (junto a TRA TRA TRA)"
+    },
+    "hidden": {
+      "p": [
+        6.5,
+        29.9,
+        -1.75
+      ],
+      "access": "roll",
+      "hint": "En el centro del lóbulo derecho del vaso (N2)"
+    },
+    "activity": {
+      "p": [
+        -0.03,
+        31.08,
+        0
+      ],
+      "access": "roll",
+      "hint": "En P1, junto al frente pintado de T1"
+    }
+  },
+  "cassette": {
+    "p": [
+      -9.6,
+      29.0
+    ],
+    "plinth": [
+      1.2,
+      0.3,
+      0.8
+    ]
+  },
+  "checkpoint": {
+    "p": [
+      -9.45,
+      31.45
+    ],
+    "faceTo": [
+      -7.0,
+      31.45
+    ]
+  },
+  "props": {
+    "bench": [
+      [
+        14.246,
+        24.803,
+        0
+      ],
+      [
+        -15.241,
+        27.37,
+        0
+      ]
+    ],
+    "bin": [
+      [
+        15.74,
+        22.85
+      ],
+      [
+        -16.33,
+        25.62
+      ]
+    ],
+    "fountain": [
+      [
+        -1.6,
+        35.9
+      ]
+    ],
+    "lamp": [
+      [
+        -7.502,
+        35.711
+      ],
+      [
+        8.178,
+        34.569
+      ],
+      [
+        -7.499,
+        24.552
+      ],
+      [
+        8.442,
+        22.762
+      ]
+    ],
+    "note": "R1 usuario: dos bancos en espejo (derecha y su simétrico a la izquierda), dos papeleras y una fuente; farolas = familia nmgLamp existente",
+    "_nota_r6": "R6 usuario: sin macetas; bancos y papeleras en el punto medio entre su sitio anterior (±10,3; 31,0) y el centro de sus macetas más cercanas (a ≈ 4 m del vaso)",
+    "lampAim": [
+      1.4,
+      29.9
+    ],
+    "_nota_r7": "R7 usuario: farolas en el suelo gris a 1 m del borde rosa (r 37 fuera, r 26 dentro; mismo ángulo que antes) con la cabeza hacia el centro de la guitarra (entre T1 y la K); bancos y papeleras donde estaban las macetas (centro de las dos de cada lado)",
+    "benchAim": true,
+    "_nota_r8": "R8 usuario: bancos (y papeleras al lado, en el extremo más lejos del vaso) mirando al centro de la guitarra (lampAim); el derecho 1,5 m y el izquierdo (junto a TT) 1 m más cerca de ese centro. `bin` queda como registro: la papelera se coloca junto a su banco"
+  },
+  "r1_usuario": {
+    "date": "2026-10-15",
+    "cambios": [
+      "Sin N3: lo que era N3 queda a la cota de N2 (−1,75); sin R3a/R3b; R2 pasa a N1→N2",
+      "R1 y R2 con 0,70 m de desarrollo, subibles y bajables a pie y en tabla",
+      "E1: colisión como rampa por los peldaños (malla de peldaños)",
+      "Vaso 1 m hacia fuera (más margen al paseo interior)",
+      "Bancos: fuera el de arriba a la derecha; el de arriba a la izquierda en espejo del de la derecha; 2 papeleras y 1 fuente",
+      "P1 50 cm más ancho (r 2,30 → 2,80)",
+      "Borde bajo T1 (montículo junto a la K) 30 cm más abajo y más plano",
+      "T1 40 cm más baja (7,60 → 7,20) quitados entre el grafiti y el metal",
+      "Rana a la mitad de tamaño"
+    ]
+  },
+  "stairs": {
+    "collision": "ramp",
+    "note": "R1 usuario (como TT V7 R1): la colisión de E1 es una rampa que pasa por los peldaños; la malla sigue siendo de peldaños"
+  },
+  "outlineMods": {
+    "p1Disc": 2.8,
+    "smooth": 0.3,
+    "bump": {
+      "x": 1.4,
+      "halfWidth": 3.3,
+      "dv": -0.72,
+      "vMax": 28.6,
+      "note": "R1 usuario: el montículo del borde bajo T1 baja 0,30 m y se aplana (ventana coseno)"
+    },
+    "_nota_r3": "R3 usuario: la montañita bajo la K, más plana (dv −0,72, ventana 3,3) para ensanchar el paso entre P1/T1 y el borde y ver mejor el rótulo desde fuera"
+  },
+  "r2_usuario": {
+    "date": "2026-10-15",
+    "cambios": [
+      "N2 derecha vuelve a N1 (−1,00): N1 = zona de E1 + zona a la derecha de T1; N2 = N2 izquierda + antiguo N3",
+      "R3b pasa a bajada N1→N2 de 0,70 m como R1 y R2",
+      "T1 sin el tramo blanco (0,80) y 0,80 menos de fuste: 7,20 → 5,60",
+      "Mecánica de pared en la piscina (enganche, subida, aire vertical para flips y reenganche; salir solo por E1)"
+    ]
+  },
+  "wallRide": {
+    "_nota": "R2 usuario (15 oct): solo dentro del vaso. Enganche a la pared a ≈ dos empujones desde parado (medido: 5,9 m/s, tools/v8/yy-push.mjs); de frente sube y sale vertical sobre el labio con aire para un flip y vuelve a engancharse al bajar; en diagonal talla la pared y vuelve; del vaso solo se sale por E1.",
+    "hookMin": 5.4,
+    "intoFrac": 0.4,
+    "airInto": 4.3,
+    "lipSpeed": [
+      6.2,
+      7.2
+    ],
+    "airGravity": 0.6,
+    "wallGravity": 0.55,
+    "downGravity": 0.45,
+    "airOffset": 0.36,
+    "turnRate": 2.2,
+    "airYawT": 0.4,
+    "reach": 0.1,
+    "driftSpeed": 2.5,
+    "_nota3b": "R11 (YY-02): ADELANTE cuenta solo si se ha visto en neutro (< 0,3) desde el enganche a la pared; mantenerlo desde la aproximación ya no saca del vaso. Se conserva la decisión R3 (adelante en el aire = salir).",
+    "_nota3": "R3 usuario: con ADELANTE mantenido en el aire se avanza (driftSpeed m/s) hacia el deck y se sale del vaso, con o sin frontflip; con backflip o sin adelante, se queda y se reengancha."
+  },
+  "mural": {
+    "_nota": "R3 usuario: atlas ÚNICO para receta y shader (antes no coincidían: 2 filas de 28,2 m a 145 px/m en la receta frente a 3 de 21,3 m a 192 px/m en el shader → tramos sin mural y piezas cortadas)",
+    "pxPerM": 256,
+    "rowLen": 16,
+    "rows": 4,
+    "rowPx": 512,
+    "atlas": [
+      4096,
+      2048
+    ],
+    "band": 1.95
+  },
+  "_nota_patatas_r9": "R9 usuario: patatas al pie de E1 (visible), encima del banco izquierdo (medium), en el centro del lóbulo derecho (hidden); la de la rana (activity) sin cambios"
+}

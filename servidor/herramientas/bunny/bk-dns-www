@@ -1,0 +1,79 @@
+#!/usr/bin/env python3
+# A dónde apunta www.bellakaventuras.com (DNS de IONOS, API oficial https://api.hosting.ionos.com/dns, cabecera X-API-Key).
+# Servidor: /usr/local/bin/bk-dns-www, clave en /etc/bk/ionos-dns.key (root, 600). En el Mac: herramientas/bunny/bk-dns-www, clave en
+# ../../.ionos-dns (600). La clave es «prefijo.secreto»; nunca se imprime.
+#   bk-dns-www estado      → qué hay en www (A al VPS = directo a IONOS; CNAME a Bunny = por la CDN)
+#   bk-dns-www a-ionos     → www = A 203.0.113.10 (vuelta al servidor directo; la usa bk-cdn-vigia si Bunny cae)
+#   bk-dns-www a-bunny     → www = CNAME bellakaventuras.b-cdn.net (encender la CDN; solo a mano)
+# La API no deja cambiar el tipo de un registro: se crea el nuevo justo después de borrar el viejo (segundos). TTL 300 (5 min).
+import json, os, sys, urllib.request, urllib.error
+
+ZONA, NOMBRE, VPS, CDN, TTL = "bellakaventuras.com", "www.bellakaventuras.com", "203.0.113.10", "bellakaventuras.b-cdn.net", 300
+API = "https://api.hosting.ionos.com/dns/v1"
+
+def clave():
+    for f in (os.environ.get("BK_IONOS_KEY", ""), "/etc/bk/ionos-dns.key",
+              os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", ".ionos-dns")):
+        if f and os.path.isfile(f):
+            k = open(f).read().strip()
+            if k:
+                return k
+    sys.exit("Falta la clave de la API de DNS de IONOS")
+
+def pide(metodo, ruta, cuerpo=None):
+    req = urllib.request.Request(API + ruta, method=metodo, data=None if cuerpo is None else json.dumps(cuerpo).encode(),
+                                 headers={"X-API-Key": clave(), "Accept": "application/json", "Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            t = r.read().decode()
+            return r.status, (json.loads(t) if t.strip() else None)
+    except urllib.error.HTTPError as e:
+        return e.code, e.read().decode()[:300]
+
+def zona_id():
+    c, zs = pide("GET", "/zones")
+    if c != 200:
+        sys.exit(f"IONOS no lista las zonas ({c})")
+    for z in zs:
+        if z.get("name") == ZONA:
+            return z["id"]
+    sys.exit(f"No encuentro la zona {ZONA}")
+
+def registros_www(zid):
+    c, z = pide("GET", f"/zones/{zid}?recordName={NOMBRE}")
+    if c != 200:
+        sys.exit(f"IONOS no da los registros ({c})")
+    return [r for r in z.get("records", []) if r.get("name") == NOMBRE and r.get("type") in ("A", "AAAA", "CNAME")]
+
+def poner(tipo, contenido):
+    zid = zona_id(); rs = registros_www(zid)
+    if len(rs) == 1 and rs[0]["type"] == tipo and rs[0]["content"].rstrip(".") == contenido:
+        print(f"www ya es {tipo} {contenido}"); return 0
+    for r in rs:
+        c, t = pide("DELETE", f"/zones/{zid}/records/{r['id']}")
+        if c not in (200, 204):
+            sys.exit(f"No pude borrar {r['type']} {r['content']} ({c}): {t}")
+    c, t = pide("POST", f"/zones/{zid}/records", [{"name": NOMBRE, "type": tipo, "content": contenido, "ttl": TTL, "prio": 0, "disabled": False}])
+    if c not in (200, 201):
+        # Red de seguridad: si no se pudo crear lo nuevo, se repone el A al VPS (la web nunca se queda sin www)
+        pide("POST", f"/zones/{zid}/records", [{"name": NOMBRE, "type": "A", "content": VPS, "ttl": TTL, "prio": 0, "disabled": False}])
+        sys.exit(f"No pude crear {tipo} {contenido} ({c}): {t}. Repuesto www A {VPS}")
+    rs = registros_www(zid)
+    print("www ahora: " + ", ".join(f"{r['type']} {r['content']} (TTL {r.get('ttl')})" for r in rs))
+    return 0
+
+def main():
+    modo = sys.argv[1] if len(sys.argv) > 1 else "estado"
+    if modo == "estado":
+        rs = registros_www(zona_id())
+        print("www: " + (", ".join(f"{r['type']} {r['content']} (TTL {r.get('ttl')})" for r in rs) or "SIN REGISTRO"))
+        print("→ " + ("por Bunny (CDN)" if any(r["type"] == "CNAME" for r in rs) else "directo al servidor de IONOS"))
+    elif modo == "a-ionos":
+        return poner("A", VPS)
+    elif modo == "a-bunny":
+        return poner("CNAME", CDN)
+    else:
+        print(open(__file__).read().split("import json")[0]); return 1
+
+if __name__ == "__main__":
+    sys.exit(main())

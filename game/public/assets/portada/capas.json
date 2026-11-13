@@ -1,0 +1,444 @@
+{
+ "h": {
+  "size": [
+   1672,
+   941
+  ],
+  "nubes": [
+   {
+    "x": 432,
+    "y": 8,
+    "w": 169,
+    "h": 103,
+    "u": 0,
+    "v": 0,
+    "aw": 182,
+    "ah": 299
+   },
+   {
+    "x": 1221,
+    "y": 50,
+    "w": 182,
+    "h": 104,
+    "u": 0,
+    "v": 107,
+    "aw": 182,
+    "ah": 299
+   },
+   {
+    "x": 966,
+    "y": 127,
+    "w": 153,
+    "h": 80,
+    "u": 0,
+    "v": 215,
+    "aw": 182,
+    "ah": 299
+   }
+  ],
+  "sky_fit_mean_abs_resid": 0.005078174639493227,
+  "viento_px_por_unidad": 6.0,
+  "viento_solape_por_grupo": [
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "viento_max_codificado": 0.30457156896591187,
+  "copas": [
+   [
+    95,
+    55,
+    235,
+    1.0,
+    0
+   ],
+   [
+    295,
+    170,
+    128,
+    0.55,
+    1
+   ],
+   [
+    462,
+    262,
+    108,
+    0.45,
+    2
+   ],
+   [
+    688,
+    195,
+    148,
+    0.75,
+    3
+   ],
+   [
+    1112,
+    268,
+    88,
+    0.4,
+    0
+   ],
+   [
+    1355,
+    272,
+    98,
+    0.45,
+    1
+   ],
+   [
+    1585,
+    175,
+    270,
+    0.55,
+    2
+   ],
+   [
+    840,
+    335,
+    70,
+    0.3,
+    0
+   ],
+   [
+    1505,
+    330,
+    80,
+    0.3,
+    3
+   ]
+  ],
+  "suelo": {
+   "y0": 690,
+   "y1": 760,
+   "excluir": [
+    [
+     1455,
+     520,
+     1672,
+     845
+    ]
+   ]
+  },
+  "origen": "ref/output/pantalla-inicio-recopilacion-2026-10-21/01_fondos/03-corazon-nmg-horizontal.png",
+  "origen_sha256": "2f1ee5583ee9f79268bf03c1d342b3661d577700c711846c420bb092dc0ae829",
+  "reconstruccion_error_medio": 1.8731218576431274,
+  "reconstruccion_error_p99": 11.000000953674316
+ },
+ "v": {
+  "size": [
+   941,
+   1672
+  ],
+  "nubes": [
+   {
+    "x": 140,
+    "y": 90,
+    "w": 208,
+    "h": 125,
+    "u": 0,
+    "v": 0,
+    "aw": 210,
+    "ah": 341
+   },
+   {
+    "x": 701,
+    "y": 181,
+    "w": 210,
+    "h": 115,
+    "u": 0,
+    "v": 129,
+    "aw": 210,
+    "ah": 341
+   },
+   {
+    "x": 388,
+    "y": 298,
+    "w": 151,
+    "h": 89,
+    "u": 0,
+    "v": 248,
+    "aw": 210,
+    "ah": 341
+   }
+  ],
+  "sky_fit_mean_abs_resid": 0.004768765065819025,
+  "viento_px_por_unidad": 6.0,
+  "viento_solape_por_grupo": [
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "viento_max_codificado": 0.4510331153869629,
+  "copas": [
+   [
+    18,
+    298,
+    235,
+    1.0,
+    0
+   ],
+   [
+    160,
+    455,
+    138,
+    0.6,
+    1
+   ],
+   [
+    322,
+    588,
+    118,
+    0.5,
+    2
+   ],
+   [
+    683,
+    612,
+    112,
+    0.5,
+    3
+   ],
+   [
+    452,
+    690,
+    76,
+    0.35,
+    0
+   ],
+   [
+    915,
+    495,
+    230,
+    0.55,
+    1
+   ],
+   [
+    800,
+    650,
+    86,
+    0.35,
+    2
+   ],
+   [
+    82,
+    640,
+    82,
+    0.35,
+    3
+   ]
+  ],
+  "suelo": {
+   "y0": 1150,
+   "y1": 1230,
+   "excluir": []
+  },
+  "origen": "ref/output/pantalla-inicio-recopilacion-2026-10-21/01_fondos/03-corazon-nmg-vertical.png",
+  "origen_sha256": "2ae94bc6054fa54611cb04bf450e1f623c2f8f2bea2acf31ea33d45659e1e3ab",
+  "reconstruccion_error_medio": 1.9695754051208496,
+  "reconstruccion_error_p99": 13.999999046325684
+ },
+ "textos": {
+  "titulo-01.webp": {
+   "origen": "ref/output/pantalla-inicio-recopilacion-2026-10-21/04_textos/bellakaventuras/01-crema-chocolate.png",
+   "origen_sha256": "e2e89b4a65ac3b39c6f1aa62cd56a840e0d0b9cff9ff48f3ecf29e29e066363a",
+   "recorte": [
+    29,
+    9,
+    2092,
+    717
+   ],
+   "tamano": [
+    1600,
+    549
+   ]
+  },
+  "titulo-02.webp": {
+   "origen": "ref/output/pantalla-inicio-recopilacion-2026-10-21/04_textos/bellakaventuras/02-rosa-crema.png",
+   "origen_sha256": "37ff7d64c8fa7a3088997bc4b91366de662674c58c9dea414880f6f4abc980ad",
+   "recorte": [
+    27,
+    1,
+    2073,
+    709
+   ],
+   "tamano": [
+    1600,
+    554
+   ]
+  },
+  "titulo-03.webp": {
+   "origen": "ref/output/pantalla-inicio-recopilacion-2026-10-21/04_textos/bellakaventuras/03-crema-frambuesa.png",
+   "origen_sha256": "c0f32167743dafdbed6558481be1d7c2d9a1401d643ad1e25866bc39be2401ce",
+   "recorte": [
+    30,
+    7,
+    2083,
+    719
+   ],
+   "tamano": [
+    1600,
+    555
+   ]
+  },
+  "subtitulo-01.webp": {
+   "origen": "ref/output/pantalla-inicio-recopilacion-2026-10-21/04_textos/el-videojuego/01-el-videojuego-anmi-crema-chocolate.png",
+   "origen_sha256": "368a5716018ec8ac5cfeaa1878bfc21f8d778e11e4643e348b4bf2bff3d7aeb7",
+   "recorte": [
+    50,
+    157,
+    2142,
+    567
+   ],
+   "tamano": [
+    1300,
+    255
+   ]
+  },
+  "subtitulo-02.webp": {
+   "origen": "ref/output/pantalla-inicio-recopilacion-2026-10-21/04_textos/el-videojuego/02-el-videojuego-anmi-rosa-crema.png",
+   "origen_sha256": "868211133baaee3bec05228ac9f201e568f972af5bce5492bc6375fcc5013d2a",
+   "recorte": [
+    31,
+    152,
+    2148,
+    568
+   ],
+   "tamano": [
+    1300,
+    255
+   ]
+  },
+  "subtitulo-03.webp": {
+   "origen": "ref/output/pantalla-inicio-recopilacion-2026-10-21/04_textos/el-videojuego/03-el-videojuego-anmi-crema-frambuesa.png",
+   "origen_sha256": "34777e24ba99a9bd770502937ee7a2952b58226a01899a93ae9d85c9a64e6e79",
+   "recorte": [
+    41,
+    152,
+    2140,
+    567
+   ],
+   "tamano": [
+    1300,
+    257
+   ]
+  },
+  "jugar-01.webp": {
+   "origen": "ref/output/pantalla-inicio-recopilacion-2026-10-21/04_textos/jugar/01-jugar-crema-chocolate.png",
+   "origen_sha256": "0568df8e68993675fb2f679d342ac1bbbfed860300b956e28788753d4c264f1b",
+   "recorte": [
+    105,
+    80,
+    2068,
+    653
+   ],
+   "tamano": [
+    1000,
+    292
+   ]
+  },
+  "jugar-02.webp": {
+   "origen": "ref/output/pantalla-inicio-recopilacion-2026-10-21/04_textos/jugar/02-jugar-rosa-crema.png",
+   "origen_sha256": "44ecc6828181468cefd703f9dc646140de12f51641c0faa63863b4bd694f8de1",
+   "recorte": [
+    95,
+    69,
+    2079,
+    651
+   ],
+   "tamano": [
+    1000,
+    293
+   ]
+  },
+  "jugar-03.webp": {
+   "origen": "ref/output/pantalla-inicio-recopilacion-2026-10-21/04_textos/jugar/03-jugar-crema-frambuesa.png",
+   "origen_sha256": "ea33abcb129602700340110f5f842e889ed03594d74d88e5fce375bd5d188b2b",
+   "recorte": [
+    72,
+    73,
+    2070,
+    666
+   ],
+   "tamano": [
+    1000,
+    297
+   ]
+  },
+  "jugar-04.webp": {
+   "origen": "ref/output/pantalla-inicio-recopilacion-2026-10-21/04_textos/jugar/04-jugar-rojo-frambuesa-crema.png",
+   "origen_sha256": "e3e3cff8f35d02b135cd845f6e2bf9ffd547e5fc199f148dee6f35bdea9aa9b6",
+   "recorte": [
+    84,
+    85,
+    2070,
+    657
+   ],
+   "tamano": [
+    1000,
+    288
+   ]
+  },
+  "anmi.webp": {
+   "origen": "ref/output/pantalla-inicio-recopilacion-2026-10-21/03_anmi/02-anmi-elegido-recortado.png",
+   "origen_sha256": "b97292a589058b5af606133cf2fd14ec88fe0899f20ae2fedd14dae6a0217ea1",
+   "tamano": [
+    1010,
+    1458
+   ],
+   "nota": "sin recolorear ni deformar; WebP con pérdida mínima"
+  }
+ },
+ "nubes_relevo": {
+  "origen": "ref/output/pantalla-inicio-recopilacion-2026-10-21/02_cielo_y_nubes/cielo-nubes-horizontal.png",
+  "origen_sha256": "7962ac3a8d5e1c2b113434ca58108ef00617bd19dd0c1faa70efa4b00947fe08",
+  "nubes": [
+   {
+    "w": 238,
+    "h": 106,
+    "origen_px": [
+     123,
+     199,
+     599,
+     412
+    ],
+    "u": 0,
+    "v": 0,
+    "aw": 238,
+    "ah": 284
+   },
+   {
+    "w": 228,
+    "h": 96,
+    "origen_px": [
+     1165,
+     310,
+     1622,
+     502
+    ],
+    "u": 0,
+    "v": 110,
+    "aw": 238,
+    "ah": 284
+   },
+   {
+    "w": 170,
+    "h": 70,
+    "origen_px": [
+     671,
+     529,
+     1012,
+     669
+    ],
+    "u": 0,
+    "v": 210,
+    "aw": 238,
+    "ah": 284
+   }
+  ],
+  "sky_fit_mean_abs_resid": 0.0040784175507724285
+ }
+}

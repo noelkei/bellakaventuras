@@ -1,0 +1,30 @@
+{
+ "version": 3,
+ "collected": [
+  "tratratra.visible",
+  "tratratra.medium"
+ ],
+ "activities": {
+  "pantherTalk": false,
+  "skateTutorial": false,
+  "graffiti": false,
+  "bridgeTalk": false,
+  "danceCombo": false
+ },
+ "bridgeReached": true,
+ "finalDone": false,
+ "revealSeen": false,
+ "checkpoint": {
+  "x": -8.2,
+  "y": 4.2,
+  "z": 34.5,
+  "heading": 1.2
+ },
+ "hints": [
+  "basic"
+ ],
+ "settings": {
+  "volume": 0.8,
+  "muted": false
+ }
+}

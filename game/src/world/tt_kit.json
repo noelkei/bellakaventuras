@@ -1,0 +1,108 @@
+{
+  "_comment": "V7 · contrato ÚNICO de TRA TRA TRA (metros). Lo leen world/tt.ts (mallas, colisiones, anclas, patatas, zonas), las recetas de assets/derived/v7/tratratra y las herramientas de game/tools/v7. Parte de referencias/escenarios/TRATRATRA/preparacion-opus-v8-2026-10-13/layout-v8.json; lo que cambia frente a v8 está razonado en Auditoría 7/plan-v7/08_REVISION_CRITICA_OPUS_V7.md y dibujado en V7/planos-as-built. Marco: local (x, y, h) girado `frame.rotDeg` y llevado a `frame.origin` (con 0°: three (x + ox, h, oz − y), norte local +Y = −Z). V7 R1 (usuario, 14 oct): giro de 180° para que E1 mire hacia SECRENOVIO (el centro del parque); el «norte» local queda hacia el borde exterior. Se aplica UNA vez.",
+  "version": "7.5",
+  "frame": { "origin": [2.0, 29.55], "rotDeg": 180, "_comment": "R1: girado 180° y desplazado para caber en la corona con E1 hacia dentro. Apoyos y todo lo que toca el suelo dentro de r 25,16–37,68; solo la losa de la trasera y su barandilla vuelan sobre el paseo exterior (hasta r 38,63, a +3,9 m), con permiso del usuario (ver Auditoría 7/plan-v7/11_ITERACIONES_V7.md)" },
+  "sector": { "theta": [144, 216], "r": [25, 38] },
+  "concrete": "tt", "_concrete": "R2 (prueba del usuario, reversible; el usuario la descartó: vuelve a \"tt\"): \"nmg\" = hormigón gris liso de NMG sin pintura (T_tt_nmggris) en caras, pilares y losas; \"tt\" = hormigón de bloque beige de V7 (T_tt_side / T_tt_top). Para volver atrás basta con poner \"tt\" y reconstruir",
+  "slab": { "upper": 0.5, "lower": 0.45, "chamfer": 0.045 },
+  "stairs": { "riser": 0.15, "collision": "ramp", "_collision": "R1 (usuario): con peldaños físicos el asistente de escalón subía a ANMI a tirones y más rápido que andando; con rampa por el punto medio de los peldaños (como el TT de V6) el ritmo lo marca quien juega. La malla sigue siendo de peldaños", "curb": { "w": 0.2, "h": 0.12 } },
+  "E1": { "x": [-1.4, 1.4], "a": [-4.4, -3.2], "landing": [-3.2, -2.6], "b": [-2.6, -1.4], "h": [0, 0.6, 1.2] },
+  "lower": { "h": 1.2, "front": [-1.4, -1.4, 8.6, 1.4], "turn": [8.6, -1.4, 11.4, 0.3], "_turn": "R1: 2,10 → 1,70 m de fondo (todo lo que queda al norte baja 0,40 m) para que el conjunto girado quepa en la corona" },
+  "P1": { "bounds": [8.6, 0.3, 11.4, 1.5], "h": 3.2, "pier": [9.0, 0.3, 11.0, 1.5] },
+  "E2": { "bounds": [8.6, 1.5, 11.4, 3.9], "h0": 3.2, "h1": 4.4, "steps": 8, "soffit": 0.45 },
+  "rear": { "bounds": [4.1, 3.9, 12.7, 7.57], "h": 4.4, "hole": [6.88, 4.75, 8.72, 6.59], "_rear": "R1 (usuario): más ancha (3,54 m libres entre el canto sur y la barandilla norte; antes 2,67) para que H conserve 0,85 m de borde a cada lado; vista en planta vuela algo sobre el paseo exterior (r ≤ 38,6 a +3,9 m), pero ningún apoyo lo pisa. Más larga hacia E3 (que llega justo antes de R1) y 1 m más al este de H para coger carrerilla", "_hole": "R1 (usuario): cuadrado del DOBLE de área que el de 1,30 (1,84 × 1,84; R7-11 lo había dejado en 1,10 y v8 proponía 1,40), desplazado 1,00 m hacia E3 (eje x 7,80) y centrado en el nuevo ancho", "apron": [0.66, 3.6, 8.0, 4.0] },
+  "E3": { "center": [4.1, 4.0], "r": [0.6, 3.44], "_r": "R1 (usuario): tan ancha como la trasera ensanchada (hasta su barandilla norte: 2,00 → 2,84 m) y llevada al oeste hasta que su salida en la recta acaba justo antes de R1 (x 0,66)", "deg": [90, 180], "steps": 8, "h0": 4.4, "h1": 5.6 },
+  "recta": { "bounds": [0, 1.2, 8, 4.0], "h": 5.6 },
+  "R1": { "x": [0, 0.6], "rise": 0.15 },
+  "reception": { "bounds": [-9.4, 1.2, -2.4, 4.0], "h": 5.6, "_gap": "R7-12: corte de 2,40 m (v8 proponía 2,00). Medido con el controlador: a pie, saltando tarde desde R1, el centro de la cápsula llega a 1,69 m y el canto se alcanzaba hasta 2,0 m; con 2,40 no se alcanza. En tabla el aterrizaje más corto medido (media recta, 4,5 m/s) queda 0,3 m dentro. Recepción (7 m), limo, EV2 y NPC se desplazan 0,40 m al oeste: márgenes de frenada intactos" },
+  "pillars": {
+    "_comment": "[x, y, cota superior (intradós de la losa), lado x, lado y, nombre]. Ninguno pisa la columna de H (6,88–8,72 × 4,75–6,59) ni el paseo exterior.",
+    "list": [
+      [-7.7, 2.6, 5.1, 1.3, 1.3, "recepcion_limo"],
+      [-3.4, 2.6, 5.1, 1.3, 1.3, "recepcion_corte"],
+      [1.1, 2.6, 5.1, 1.3, 1.3, "recta_oeste"],
+      [6.9, 2.6, 5.1, 1.3, 1.3, "recta_este"],
+      [2.55, 5.55, 3.9, 1.3, 1.3, "abanico"],
+      [11.8, 6.0, 3.9, 1.3, 1.3, "trasera_este"],
+      [5.35, 6.2, 3.9, 1.3, 1.3, "trasera_oeste"],
+      [0.3, 0.0, 0.75, 1.0, 1.0, "camino_1"],
+      [4.2, 0.0, 0.75, 1.0, 1.0, "camino_2"],
+      [7.9, 0.0, 0.75, 1.0, 1.0, "camino_3"],
+      [10.0, -0.55, 0.75, 1.0, 1.0, "giro"]
+    ]
+  },
+  "rails": {
+    "h": 0.9, "tube": 0.04, "post": 0.03, "spacing": 1.0, "stairSpacing": 0.3, "inset": 0.09,
+    "_comment": "Polilíneas [x, y, cota de la base]. Solo donde V01 las muestra: recta, R1 y recepción quedan abiertas.",
+    "lines": {
+      "e1_oeste_y_camino": [[-1.3, -4.4, 0], [-1.3, -3.2, 0.6], [-1.3, -2.6, 0.6], [-1.3, -1.4, 1.2], [-1.31, 1.31, 1.2], [8.5, 1.31, 1.2]],
+      "e1_este": [[1.3, -4.4, 0], [1.3, -3.2, 0.6], [1.3, -2.6, 0.6], [1.3, -1.4, 1.2]],
+      "e2_oeste": [[8.69, 1.5, 3.2], [8.69, 3.9, 4.4], [8.69, 3.99, 4.4], [8.05, 3.99, 4.4]],
+      "e2_este_y_trasera": [[11.31, 1.5, 3.2], [11.31, 3.9, 4.4], [11.31, 3.99, 4.4], [12.61, 3.99, 4.4], [12.61, 7.48, 4.4], [4.17, 7.48, 4.4]]
+    },
+    "e3_arc": { "r": 3.48, "post_every": 2 }
+  },
+  "ladders": {
+    "_comment": "Escaleras de mano. `face` = plano de la pared; `dir` = hacia dónde mira quien trepa (N = +Y, W = −X). Cotas absolutas.",
+    "EV1": { "dir": "N", "at": 10.0, "face": 0.3, "standoff": 0.1, "width": 0.8, "bottom": 1.2, "top": 3.2, "rung": 0.22, "topIn": 0.55 },
+    "EV2": { "dir": "W", "at": 3.5, "face": -6.846, "standoff": 0.11, "width": 0.6, "bottom": 5.6, "top": 7.179, "rung": 0.22, "topIn": 0.55 }
+  },
+  "limo": {
+    "_comment": "Derivado V5 (frente −X en glTF). Escala uniforme; base = cota del origen del modelo. Secciones medidas por rayos (assets/derived/v7/tratratra/medidas/limo_perfil.json), en metros del modelo SIN escalar: l = a lo largo (frente negativo), w = semiancho, z = altura.",
+    "center": [-7.7, 2.6], "scale": 1.139085814, "base": 5.3316111, "refLength": 7.218, "roof": 7.179,
+    "sections": {
+      "body": { "l": [-3.45, 3.45], "w": 0.75, "z": [0.24, 1.1] },
+      "hood": { "l": [-3.45, -2.76], "w": 0.74, "z0": 1.0, "zFront": 1.04, "zBack": 1.15 },
+      "cabin": { "lBottom": [-2.78, 3.44], "lTop": [-2.43, 3.42], "wBottom": 0.72, "wTop": 0.685, "z0": 1.1, "zFront": 1.63, "zBack": 1.6 },
+      "bumpers": { "l": [3.45, 3.6], "w": 0.7, "z": [0.3, 0.8] },
+      "wheels": { "l": [2.42, 3.28], "w": [0.72, 1.0], "z": [0.0, 0.86] }
+    }
+  },
+  "npcs": {
+    "_comment": "Asientos medidos sobre la carrocería (assets/derived/v7/tratratra/npc_fit.json). `root` = raíz del modelo sentado (x, y, h); `heading` local en grados (0 = mira a −Y, hacia la entrada; 180 = a +Y). R1 (usuario): zonas de charla 10 cm más hacia el centro de la limo; al hablar, cada NPC se levanta (`stand` = raíz de pie sobre la carrocería), se gira, anda por `path` (Aissa sube del morro al techo por el parabrisas, como por una escalera), se acerca `approach` m hacia ANMI, dice su frase y vuelve por el mismo camino a sentarse. Los dos hablan DE PIE SOBRE EL TECHO; si ANMI está a menos de 0,9 m de ese sitio, se la aparta hacia el centro del techo.",
+    "seatH": 0.46,
+    "aissa": { "root": [-7.7, -1.205, 6.164], "headingDeg": 0, "zone": [-7.7, 0.25, 1.25], "zoneH": [6.35, 7.9], "cam": [-4.7, -2.3, 8.25], "area": [1.4, 1.5], "stand": [-7.7, -1.0, 6.57], "path": [[-7.7, -0.62, 6.6], [-7.7, -0.1, 7.179]], "approach": 0.2 },
+    "juseph": { "root": [-7.7, 6.257, 6.74], "headingDeg": 180, "zone": [-7.7, 5.25, 1.15], "zoneH": [6.95, 7.9], "cam": [-4.7, 7.0, 8.6], "area": [1.4, 1.7], "stand": [-7.7, 5.95, 7.179], "path": [], "approach": 0.35 }
+  },
+  "fries": {
+    "_comment": "Centro visual absoluto (x, y, h), semiancho horizontal de recogida y ventana ABSOLUTA de altura del pie.",
+    "visible": { "c": [10.0, -0.65, 1.75], "half": 0.6, "reach": [1.05, 2.15] },
+    "medium": { "c": [7.8, 5.67, 5.55], "half": 0.55, "reach": [4.65, 6.5] },
+    "hidden": { "c": [7.8, 5.67, 0.55], "half": 0.6, "reach": [-0.05, 0.85] },
+    "activity": { "c": [-7.7, 2.6, 7.729], "half": 0.5, "reach": [7.079, 8.079] }
+  },
+  "graffiti": {
+    "_comment": "Grafitis TT y lettering L02 pintados sobre caras: cada uno UNA vez (los W1–W3 no son grafitis: velos de espray de color sin motivo, como los de los pilares de V01, y sí se repiten), repartidos por las cuatro orientaciones, con tamaño y carácter propios (receta make_tt_textures.py). R1 (usuario): diez colores, diez tamaños (0,62–1,50 m de alto) y opacidad, fundido y desgaste distintos; todos contrastan con el hormigón. `pillar` + `face` (N/S/E/W) o `at` [x, y] del plano de la cara; `h` = cota del centro; `size` = alto de la celda en metros (el ancho sale del atlas).",
+    "list": [
+      { "id": "G06", "pillar": "recepcion_limo", "face": "S", "h": 1.45, "size": 1.44 },
+      { "id": "L02", "pillar": "recepcion_corte", "face": "S", "h": 3.2, "size": 1.3 },
+      { "id": "G03", "pillar": "recta_oeste", "face": "S", "h": 2.75, "size": 1.36 },
+      { "id": "G01", "pillar": "recta_este", "face": "S", "h": 2.7, "size": 1.12 },
+      { "id": "G07", "at": [9.0, 0.9], "face": "W", "h": 1.95, "size": 1.5 },
+      { "id": "G05", "at": [1.4, -2.0], "face": "E", "h": 0.44, "size": 0.7 },
+      { "id": "G02", "at": [7.3, 4.0], "face": "N", "h": 4.76, "size": 0.62 },
+      { "id": "G08", "pillar": "abanico", "face": "N", "h": 1.4, "size": 0.82 },
+      { "id": "G09", "pillar": "trasera_este", "face": "N", "h": 1.65, "size": 1.22 },
+      { "id": "G04", "pillar": "trasera_este", "face": "E", "h": 1.5, "size": 0.94 },
+      { "id": "W1", "pillar": "recepcion_limo", "face": "E", "h": 1.25, "size": 2.3 },
+      { "id": "W2", "pillar": "recepcion_corte", "face": "E", "h": 1.2, "size": 2.2 },
+      { "id": "W3", "pillar": "recta_oeste", "face": "W", "h": 1.3, "size": 2.4 },
+      { "id": "W2", "pillar": "recta_este", "face": "E", "h": 1.2, "size": 2.2 },
+      { "id": "W1", "pillar": "abanico", "face": "W", "h": 1.2, "size": 2.2 },
+      { "id": "W3", "pillar": "recepcion_limo", "face": "N", "h": 1.25, "size": 2.3 },
+      { "id": "W1", "pillar": "recta_oeste", "face": "N", "h": 1.3, "size": 2.3 },
+      { "id": "W2", "pillar": "recepcion_corte", "face": "N", "h": 1.2, "size": 2.2 },
+      { "id": "W3", "at": [10.0, 1.5], "face": "N", "h": 1.2, "size": 2.2 },
+      { "id": "W1", "at": [11.0, 0.9], "face": "E", "h": 1.25, "size": 2.3 }
+    ]
+  },
+  "vegetation": {
+    "_comment": "Vegetación facetada de la familia NMG, como en V01 (R1, usuario: sin farolillos): matas al pie de pilares y de E1, palmeras y árbol en el contorno. Solo dos tipos de mata (a, b): cada tipo de planta son 4–7 materiales = 4–7 llamadas de dibujo, y la vista de TT tiene presupuesto (perf-v7). Fuera de rutas, de la columna de H y de la carrera. plants [x, y, variante, escala, giro°]; shrubs [x, y, escala]; palms [x, y, alto, inclinación, semilla]; trees [x, y, variante, alto].",
+    "plants": [],
+    "shrubs": [],
+    "palms": [],
+    "trees": []
+  },
+  "cassette": { "at": [-2.55, -3.3], "plinth": [1.4, 0.3, 0.9], "headingDeg": -35 },
+  "checkpoint": { "at": [0.0, -5.2], "headingDeg": 180 }
+}

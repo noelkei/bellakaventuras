@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Gancho de publicar.sh: quita de la copia lo que no debe salir a internet (no toca la build original).
+#   - Rutas del Mac del autor (/Users/<usuario>/…) en JS, JSON, HTML y CSS.
+#   - Comentarios HTML de index.html (notas internas con citas del autor).
+#   - Informe interno asset-report.json.
+# Después se niega a publicar si queda algo de eso, mapas de código (.map), archivos ocultos o audio largo.
+set -euo pipefail
+S="$1"
+rm -f "$S/assets/asset-report.json"
+find "$S" -type f \( -name '*.js' -o -name '*.json' -o -name '*.html' -o -name '*.css' \) -print0 |
+  xargs -0 perl -pi -e 's#/Users/[^/"`'"'"']+/Desktop/Bellakaventuras/#ref/#g'
+perl -0pi -e 's/<!--.*?-->\n?//gs' "$S/index.html"
+mal=0
+if grep -rlE '/Users/' "$S" --include='*.js' --include='*.json' --include='*.html' --include='*.css' >/dev/null; then
+  echo "   ALTO: quedan rutas personales:" >&2; grep -rlE '/Users/' "$S" >&2; mal=1; fi
+if find "$S" -name '*.map' -o -name '.*' -type f | grep -q .; then echo "   ALTO: hay .map o archivos ocultos" >&2; mal=1; fi
+if command -v ffprobe >/dev/null; then
+  while IFS= read -r -d '' a; do
+    d=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$a" | cut -d. -f1)
+    [ "${d:-0}" -gt 75 ] && { echo "   ALTO: audio de ${d} s (¿canción entera?): $a" >&2; mal=1; }
+  done < <(find "$S" -type f \( -iname '*.mp3' -o -iname '*.m4a' -o -iname '*.ogg' -o -iname '*.wav' -o -iname '*.aac' -o -iname '*.opus' -o -iname '*.flac' \) -print0)
+  find "$S" -type f -iname '*.wav' | grep -q . && { echo "   ALTO: hay archivos WAV" >&2; mal=1; }
+else echo "   ALTO: falta ffprobe para comprobar la duración del audio" >&2; mal=1; fi
+[ $mal = 0 ] && echo "   limpio: sin rutas personales, sin comentarios, sin .map, audio ≤75 s"
+exit $mal
